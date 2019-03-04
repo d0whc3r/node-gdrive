@@ -1,0 +1,51 @@
+{
+  "name": "node-gdrive",
+  "version": "1.0.0",
+  "license": "MIT",
+  "author": {
+    "email": "d0whc3r@gmail.com",
+    "name": "d0whc3r",
+    "url": "https://github.com/d0whc3r"
+  },
+  "repository": "https://github.com/d0whc3r/node-gdrive",
+  "keywords": [
+    "node",
+    "google",
+    "drive",
+    "gdrive",
+    "backup",
+    "copy",
+    "googleapi"
+  ],
+  "scripts": {
+    "dev": "dotenv -e .env -- node -r ts-node/register -r tsconfig-paths/register src/index.ts",
+    "lint": "tslint -p .",
+    "build": "rimraf dist && webpack"
+  },
+  "dependencies": {
+    "googleapis": "37.2.0"
+  },
+  "devDependencies": {
+    "@types/jest": "24.0.9",
+    "@types/node": "11.10.4",
+    "dotenv-cli": "1.4.0",
+    "jest": "24.1.0",
+    "rimraf": "2.6.3",
+    "ts-jest": "24.0.0",
+    "ts-loader": "5.3.3",
+    "ts-node": "8.0.2",
+    "tsconfig-paths": "3.8.0",
+    "tsconfig-paths-webpack-plugin": "3.2.0",
+    "tslint": "5.13.1",
+    "typescript": "3.3.3333",
+    "webpack": "4.29.6",
+    "webpack-cli": "3.2.3"
+  },
+  "files": [
+    "dist",
+    "src",
+    "types"
+  ],
+  "main": "dist/gdrive.js",
+  "types": "types/index.d.ts"
+}
