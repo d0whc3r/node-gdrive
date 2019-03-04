@@ -6,7 +6,7 @@ module.exports = {
   target: 'node',
   devtool: 'inline-source-map',
   output: {
-    filename: 'index.js',
+    filename: 'gdrive.js',
     path: path.resolve(__dirname, 'dist'),
   },
   module: {
