@@ -2,6 +2,7 @@
 
 dist
 secrets
+files
 
 # Logs
 /logs

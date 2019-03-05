@@ -1,18 +1,22 @@
-import Gdrive from '@/gdrive';
-import { drive_v3 } from 'googleapis';
-import Schema$FileList = drive_v3.Schema$FileList;
+import GDrive from '@/gdrive';
 
-const gdrive = new Gdrive();
+const gdrive = new GDrive();
 
 async function listFiles() {
-  const info: Schema$FileList = await gdrive.listFiles();
-  // console.log('Info', info);
-  const { files } = info;
+  const files = await gdrive.listFiles();
   if (files.length) {
-    console.log('Files:', files.map((file) => ({ ...file, isFolder: gdrive.isFolder(file) })));
+    console.log('Files:', files);
   } else {
     console.log('No files found.');
   }
 }
 
 listFiles();
+
+async function upload() {
+  const uploaded = await gdrive.uploadFiles(['./secrets/token.json', './secrets/credentials.json'], 'files',
+      { compress: 'zipped.zip', create: true, replace: true });
+  console.log('uploaded', uploaded);
+}
+
+upload();
