@@ -31,3 +31,39 @@ To make docker image work properly you need to indicate where credentials and to
 ```bash
 docker run --rm -it -v $PWD/secrets:/app/secrets:ro gdrive -l
 ```
+
+## Cli help output
+
+```bash
+Help for gdrive
+
+  Usage of npm gdrive in command line. 
+
+Options
+
+  -l, --list                                     List all files and folders                                                    
+  -b, --backup file*                             Backup files                                                                  
+  -z, --zip zipname.zip                          Zip backup files                                                              
+  -r, --replace                                  Replace files if already exists when backup upload                            
+  -c, --create                                   Create destination upload folder                                              
+  -f, --folder foldername                        Folder name to upload file/s                                                  
+  -d, --delete foldername=duration OR duration   Clean files older than duration in foldername                                 
+  -m, --mysql                                    Mysql backup using environment variables to connect mysql server              
+                                                 ($MYSQL_USER, $MYSQL_PASSWORD, $MYSQL_DATABASE, $MYSQL_HOST, $MYSQL_PORT)     
+  -h, --help                                     Print this usage guide.                                                       
+
+Examples
+
+  1. List files.                                                                      $ gdrive -l                                                   
+  2. Backup multiple files to "backupFolder" folder.                                  $ gdrive -b src/index.ts -b images/logo.png -f backupFolder   
+  3. Backup files using wildcard to "backup" folder.                                  $ gdrive -b src/* -b images/* -f backup                       
+  4. Backup files using wildcard and zip into "zipped" folder folder will be          $ gdrive -b src/* -b images/* -z -f zipped.zip -c             
+  created if it doesn't exists.                                                                                                                     
+  5. Backup files using wildcard and zip using "allfiles.zip" as filename into        $ gdrive -b src/* -b images/* -z allfiles.zip -f zipped -c -r 
+  "zipped" folder folder will be created if it doesn't exists and zipfile will be                                                                   
+  replaced if it exists                                                                                                                             
+  6. Delete files in "uploads" folder older than 2days and files in "monthly"         $ gdrive -d uploads=2d -d monthly=1M                          
+  folder older than 1month                                                                                                                          
+  7. Delete files in "uploads" folder older than 1minute                              $ gdrive -f uploads -d 1m                                     
+  8. Generate mysql dump file zip it and upload to "mysql-backup" folder              $ gdrive -f mysql-backup -m -z   
+```
