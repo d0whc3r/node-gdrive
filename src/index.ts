@@ -232,7 +232,7 @@ export default class GDrive {
             new Error(`${Config.TAG} Folder "${folderName}" does not exists and will not be created`));
       }
     }
-    if (replace !== undefined && folderId) {
+    if (replace !== undefined) {
       const searchFile = await this.findFile(name, folderId);
       if (searchFile) {
         if (!replace) {
