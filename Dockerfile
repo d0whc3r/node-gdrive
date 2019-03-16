@@ -5,11 +5,9 @@ COPY webpack/ /app/webpack
 COPY src/ /app/src
 COPY cli/ /app/cli
 WORKDIR /app
-RUN yarn install
-RUN yarn build
-RUN yarn pkg:linux
+RUN yarn install && yarn build
 
-FROM node:10
+FROM node:10-alpine
 
 ENV TOKEN_FILE=/app/secrets/token.json
 ENV CREDENTIALS_FILE=/app/secrets/credentials.json
