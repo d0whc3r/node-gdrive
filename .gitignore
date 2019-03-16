@@ -4,6 +4,7 @@ dist
 bin
 secrets
 files
+gdrive-*
 
 # Logs
 /logs

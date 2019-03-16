@@ -27,7 +27,10 @@
     "build:dist": "rimraf dist && webpack --config webpack/webpack.config.js",
     "build:cli": "rimraf bin && webpack --config webpack/webpack.config-cli.js",
     "build": "yarn build:dist && yarn build:cli",
-    "makepkg": "pkg -t node10-alpine-x64"
+    "pkg:alpine": "pkg -t node10-alpine-x64 -o gdrive-alpine bin/cli.js",
+    "pkg:linux": "pkg -t node10-linux-x64 -o gdrive-linux bin/cli.js",
+    "pkg:win": "pkg -t node10-windows-x64 -o gdrive-win.exe bin/cli.js",
+    "pkg:all": "yarn pkg:alpine & yarn pkg:linux & yarn pkg:win"
   },
   "dependencies": {
     "archiver": "3.0.0",
