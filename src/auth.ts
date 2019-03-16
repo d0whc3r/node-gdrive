@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library';
 import * as readline from 'readline';
+import * as colors from 'colors';
 import Config from '@/config';
 
 export default class Auth {
@@ -19,7 +20,7 @@ export default class Auth {
   constructor() {
     if (!this.existsCredentials) {
       this.ready = false;
-      console.error(`${Config.TAG} ERROR: Credentials file not found in ${this.CREDENTIALS_FILE}`.red.bold);
+      console.error(colors.bold(`${Config.TAG} ERROR: Credentials file not found in ${this.CREDENTIALS_FILE}`).red);
     }
   }
 
@@ -76,7 +77,7 @@ export default class Auth {
   private oAuthGetToken(code, { resolve, reject }) {
     this.oAuth2Client(false).getToken(code, (err, token) => {
       if (err) {
-        console.error(`${Config.TAG} Error retrieving access token`.red.bold, err);
+        console.error(colors.bold(`${Config.TAG} Error retrieving access token`).red, err);
         reject(err);
       } else {
         this.oAuth2Client(false).setCredentials(token);
