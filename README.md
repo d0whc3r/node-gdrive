@@ -34,7 +34,7 @@ docker run --rm -it -v $PWD/secrets:/app/secrets:ro gdrive -l
 
 ## Cli help output
 
-```bash
+```
 Help for gdrive
 
   Usage of npm gdrive in command line. 
