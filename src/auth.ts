@@ -19,7 +19,7 @@ export default class Auth {
   constructor() {
     if (!this.existsCredentials) {
       this.ready = false;
-      console.error(`${Config.TAG} ERROR: Credentials file not found in ${this.CREDENTIALS_FILE}`);
+      console.error(`${Config.TAG} ERROR: Credentials file not found in ${this.CREDENTIALS_FILE}`.red.bold);
     }
   }
 
@@ -76,7 +76,7 @@ export default class Auth {
   private oAuthGetToken(code, { resolve, reject }) {
     this.oAuth2Client(false).getToken(code, (err, token) => {
       if (err) {
-        console.error(`${Config.TAG} Error retrieving access token`, err);
+        console.error(`${Config.TAG} Error retrieving access token`.red.bold, err);
         reject(err);
       } else {
         this.oAuth2Client(false).setCredentials(token);

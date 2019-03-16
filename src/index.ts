@@ -141,6 +141,9 @@ export default class GDrive {
   constructor() {
     this.gdriveAuth = new Auth();
     this.initiated = this.gdriveAuth.initiate();
+    this.initiated.catch(() => {
+      process.exit(-1);
+    });
   }
 
   private get auth(): OAuth2Client {
