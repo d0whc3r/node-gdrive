@@ -24,15 +24,21 @@ docker build -t gdrive .
 ### Run cli commands inside docker
 
 ```bash
-docker run --rm -it gdrive --help
+docker run --rm gdrive --help
 ```
 To make docker image work properly you need to indicate where credentials and token are located
 
 ```bash
-docker run --rm -it -v $PWD/secrets:/app/secrets:ro gdrive -l
+docker run --rm -v $PWD/secrets:/app/secrets:ro gdrive -l
 ```
 
 ## Cli help output
+
+Using docker image from [hub.docker.com](https://hub.docker.com/r/d0whc3r/gdrive)
+
+```bash
+docker run --rm d0whc3r/gdrive --help
+```
 
 ```
 Help for gdrive
