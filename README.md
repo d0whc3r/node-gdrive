@@ -19,10 +19,14 @@ You could use cli app in docker
 
 ```bash
 docker build -t gdrive .
-docker run --rm -it gdrive --help
 ```
 
-To make docker image work you need to indicate where credentials and token are located
+### Run cli commands inside docker
+
+```bash
+docker run --rm -it gdrive --help
+```
+To make docker image work properly you need to indicate where credentials and token are located
 
 ```bash
 docker run --rm -it -v $PWD/secrets:/app/secrets:ro gdrive -l
