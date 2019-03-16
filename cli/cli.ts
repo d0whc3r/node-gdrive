@@ -20,7 +20,7 @@ class Cli {
   constructor(
       private opts = options,
       private gdrive = new GDrive()) {
-    console.log('OPTIONS', this.opts);
+    // console.log('OPTIONS', this.opts);
   }
 
   async parseOptions() {
