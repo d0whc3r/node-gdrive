@@ -1,6 +1,7 @@
 .idea
 
 dist
+bin
 secrets
 files
 

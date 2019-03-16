@@ -27,7 +27,6 @@
       "jest"
     ],
     "baseUrl": "./",
-    "rootDir": "./src",
     "paths": {
       "@/*": [
         "src/*"
@@ -42,7 +41,6 @@
       "es2015",
       "dom"
     ],
-    "outDir": "dist"
   },
   "include": [
     "./src/**/*.ts"
