@@ -15,6 +15,7 @@ const optionDefinitions: OptionDefinition[] = [
     name: 'backup',
     alias: 'b',
     typeLabel: '{underline file*} ',
+    defaultOption: true,
     multiple: true,
     type: String,
     description: 'Backup files',
@@ -38,9 +39,8 @@ const optionDefinitions: OptionDefinition[] = [
     name: 'create',
     alias: 'c',
     multiple: false,
-    defaultValue: true,
     type: Boolean,
-    description: 'Create destination upload folder (default = true)',
+    description: 'Create destination upload folder',
   },
   {
     name: 'folder',
@@ -53,7 +53,7 @@ const optionDefinitions: OptionDefinition[] = [
   {
     name: 'delete',
     alias: 'd',
-    typeLabel: '{underline foldername=duration}',
+    typeLabel: '{underline foldername=duration} OR {underline duration}',
     multiple: true,
     type: String,
     description: 'Clean files older than duration in foldername',
