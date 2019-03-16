@@ -1,7 +1,7 @@
 import GDrive from '@/index';
 import { options } from './cliconfig';
 import * as colors from 'colors';
-import mysqlDump from 'mysql-backup';
+import mysqldump from 'mysqldump';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as moment from 'moment';
@@ -173,22 +173,30 @@ class Cli {
 
   private createDumpFile() {
     const host = process.env.MYSQL_HOST || 'localhost';
+    const port = +process.env.MYSQL_PORT || 3306;
     const user = process.env.MYSQL_USER;
     const password = process.env.MYSQL_PASSWORD;
     const database = process.env.MYSQL_DATABASE;
     if (!user || !password || !database) {
       console.error(`${Config.TAG} Error in mysql-dump environment variables not defined`);
       console.error('$MYSQL_USER, $MYSQL_PASSWORD, $MYSQL_DATABASE, $MYSQL_HOST, $MYSQL_PORT');
+      process.exit(-1);
     }
-    return mysqlDump({
-      host,
-      user,
-      password,
-      database,
-    }).then(dump => {
+    return mysqldump({
+      connection: {
+        host,
+        port,
+        user,
+        password,
+        database,
+      },
+    }).then(({ dump }) => {
       const fileDest = `./files/mysqldump-${moment().format('YYYY-MM-DD.HHmmss')}.sql`;
       FileUtils.mkdirp(path.dirname(fileDest));
-      fs.writeFileSync(fileDest, dump);
+      const content = Object.values(dump)
+          .map((result) => result.replace(/^# /gm, '-- '))
+          .join('\n\n');
+      fs.writeFileSync(fileDest, content);
       return fileDest;
     });
   }

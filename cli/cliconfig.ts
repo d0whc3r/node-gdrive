@@ -135,6 +135,10 @@ if (options.help || !Object.keys(options).length) {
           desc: '7. Delete files in "uploads" folder older than 1minute',
           example: `$ ${ex} -f uploads -d 1m`,
         },
+        {
+          desc: '8. Generate mysql dump file zip it and upload to "mysql-backup" folder',
+          example: `$ ${ex} -f mysql-backup -m -z`,
+        },
       ],
     },
   ];
