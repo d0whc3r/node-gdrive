@@ -1,5 +1,5 @@
-import commandLineArgs = require('command-line-args');
-import commandLineUsage = require('command-line-usage');
+import * as commandLineArgs from 'command-line-args';
+import * as commandLineUsage from 'command-line-usage';
 import { OptionDefinition, Section } from 'command-line-usage';
 import { CommandLineOptions } from 'command-line-args';
 

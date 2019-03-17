@@ -1,14 +1,15 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
-    "target": "es2016",
+    "module": "es2015",
+    "target": "es2015",
     "pretty": true,
     "removeComments": true,
     "strict": true,
     "moduleResolution": "node",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "sourceMap": true,
+    "sourceMap": false,
+    "allowSyntheticDefaultImports": true,
     "declaration": false,
     "noStrictGenericChecks": true,
     "noImplicitAny": false,
@@ -41,9 +42,11 @@
       "es2015",
       "dom"
     ],
+    "outDir": "out"
   },
   "include": [
-    "./src/**/*.ts"
+    "./src/**/*.ts",
+    "./cli/**/*.ts"
   ],
   "exclude": [
     "node_modules"

@@ -92,7 +92,13 @@ class Cli {
   }
 
   async dumpMysql(options: { zip: string, folder: string, replace: boolean, create: boolean }) {
-    const mysqlfile = await this.createDumpFile();
+    let mysqlfile;
+    try {
+      mysqlfile = await this.createDumpFile();
+    } catch(err) {
+      console.error(`${Config.TAG} Error mysql ${err}`['bold'][theme.error]);
+      process.exit(-1);
+    }
     await this.backup(mysqlfile, options);
   }
 
