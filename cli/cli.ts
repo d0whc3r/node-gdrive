@@ -1,11 +1,10 @@
-import GDrive from '@/index';
+import { GDrive, Schema$File$Modded } from '../src';
 import { options } from './cliconfig';
 import * as colors from 'colors';
 import mysqldump from 'mysqldump';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as moment from 'moment';
-import { Schema$File$Modded } from '../src';
 import Config from '../src/config';
 import FileUtils from '../src/file.utils';
 

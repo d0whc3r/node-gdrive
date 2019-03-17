@@ -124,7 +124,7 @@ export interface Schema$File$Modded extends Schema$File {
   isFolder: boolean;
 }
 
-export default class GDrive {
+export class GDrive {
   public readonly DEFAULT_FIELDS: FieldsType[] = [
     'createdTime',
     'id',
