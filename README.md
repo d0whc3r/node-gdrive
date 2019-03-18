@@ -63,7 +63,7 @@ Examples
   1. List files.                                                                      $ gdrive -l                                                   
   2. Backup multiple files to "backupFolder" folder.                                  $ gdrive -b src/index.ts -b images/logo.png -f backupFolder   
   3. Backup files using wildcard to "backup" folder.                                  $ gdrive -b src/* -b images/* -f backup                       
-  4. Backup files using wildcard and zip into "zipped" folder folder will be          $ gdrive -b src/* -b images/* -z -f zipped.zip -c             
+  4. Backup files using wildcard and zip into "zipped" folder folder will be          $ gdrive -b src/* -b images/* -z -f zipped -c             
   created if it doesn't exists.                                                                                                                     
   5. Backup files using wildcard and zip using "allfiles.zip" as filename into        $ gdrive -b src/* -b images/* -z allfiles.zip -f zipped -c -r 
   "zipped" folder folder will be created if it doesn't exists and zipfile will be                                                                   
