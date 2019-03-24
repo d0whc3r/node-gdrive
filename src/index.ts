@@ -322,7 +322,7 @@ export class GDrive {
       const [, time, granulary] = match;
       const filtered = files
           .filter((file) => !folderId || (folderId && !file.isFolder))
-          .filter((file) => !folderId || file.parents.includes(folderId))
+          .filter((file) => !folderId || (folderId && file.parents.includes(folderId)))
           .map((file) => {
             return {
               ...file,
@@ -335,7 +335,6 @@ export class GDrive {
         for (let file of filtered) {
           await this.deleteFile(file);
         }
-        // await this.cleanOlder(timeSpace, folderName);
       }
     }
   }
