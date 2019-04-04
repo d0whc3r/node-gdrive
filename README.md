@@ -2,10 +2,47 @@
 
 Utility to manipulate google drive using nodejs. It could upload content to google drive and it could be used as backup service.
 
+## Create credentials and token files
+
 To get `credentials.json` file you need to visit:
 - [https://developers.google.com/drive/api/v3/quickstart/nodejs](https://developers.google.com/drive/api/v3/quickstart/nodejs)
 
 Then click `ENABLE THE DRIVE API` and click `DOWNLOAD CLIENT CONFIGURATION`
+
+This will download **credentials.json** file, you can save it in *secrets* folder in the project.
+Now you need to generate **token.json** file, to do this you need to execute any command to access your google-drive, for example:
+
+### Using docker
+
+Then you could execute a simple command to generate token.json:
+
+> Be careful to copy `credentials.json` into `$PWD/secrets` path
+
+```bash
+docker run --rm -v $PWD/secrets:/app/secrets/ d0whc3r/gdrive -l
+```
+
+### Using downloaded project
+
+> First you need to download project from github using:
+
+```bash
+git clone https://github.com/d0whc3r/node-gdrive.git
+cd node-gdrive
+yarn install
+```
+
+Then you could execute a simple command to generate token.json:
+
+```bash
+yarn cli -l
+```
+
+### Next step
+
+Using docker or project files the `-l` command is for listing existing files in google-drive
+
+If *credentials.json* is present but *token.json* is missing this last file will be generated showing an url into terminal output, you need to enter that url and validate all needed permisions, then a token will be shown in your web browser, this token need to be pasted in terminal.
 
 By default this software check for credentials (and token) file in folder `secrets` but it could be changed using environment variables:
 - **CREDENTIALS_FILE**: File with credentials (credentials.json)
