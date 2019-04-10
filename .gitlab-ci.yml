@@ -1,0 +1,49 @@
+image: node:10
+
+cache:
+  key: "$CI_BUILD_REF_NAME"
+  paths:
+    - node_modules
+    - .yarn-cache
+    - .scannerwork
+    - /root/.sonar
+
+stages:
+  - install
+  - test
+  - analysis
+
+install-deps:
+  stage: install
+  script:
+    - yarn install --cache-folder .yarn-cache
+    - yarn build
+
+tests:
+  stage: test
+  script:
+    - mkdir -p secrets
+    - echo "${CREDENTIALS_JSON}" > secrets/credentials.json
+    - echo "${TOKEN_JSON}" > secrets/token.json
+    - yarn test:codecovs -t ${CODECOVS_TOKEN}
+  coverage: '/All files\s*\|\s*([\d.]+)/'
+  artifacts:
+    paths:
+      - coverage
+    expire_in: 30 days
+
+sonarqube-reports-master:
+  stage: analysis
+  image: timbru31/java-node
+  only:
+    - master
+  script:
+    - yarn sonar-scanner -Dsonar.login=${SONAR_TOKEN} -Duser.home=./
+
+sonarqube-reports-branch:
+  stage: analysis
+  image: timbru31/java-node
+  except:
+    - master
+  script:
+    - yarn sonar-scanner -Dsonar.login=${SONAR_TOKEN} -Dsonar.branch.name=${CI_BUILD_REF_NAME} -Dsonar.branch.target=master -Duser.home=./

@@ -215,10 +215,7 @@ export class GDrive {
       options?: { create?: boolean; replace?: boolean },
   ): Promise<Schema$File> {
     await this.initiated;
-    let { create, replace } = options;
-    if (create === undefined) {
-      create = true;
-    }
+    const { create, replace } = options || {} as any;
     const name = path.basename(file);
     const mimeType = mime.contentType(file);
     const requestBody: Schema$File = {
@@ -227,7 +224,7 @@ export class GDrive {
     };
     let folderId: string;
     if (folderName && typeof folderName === 'string') {
-      folderId = await this.findFolderId(folderName, create);
+      folderId = await this.findFolderId(folderName, create === undefined ? true : create);
       if (folderId) {
         requestBody.parents = [folderId];
       } else {
@@ -288,13 +285,13 @@ export class GDrive {
       uploadFiles = [result];
     }
     const result: { [filename: string]: Schema$File$Modded } = {};
-    for (let file of uploadFiles) {
+    for (const file of uploadFiles) {
       if (file.includes('*')) {
         await this.uploadFiles(glob.sync(file), folderName, options);
       } else if (fs.lstatSync(file).isDirectory()) {
         await this.uploadFiles(glob.sync(`${file}/*`), folderName, options);
       } else {
-        let filename = path.basename(file);
+        const filename = path.basename(file);
         const upFile = await this.uploadFile(file, folderName, { replace, create });
         result[filename] = this.parseFileMeta(upFile);
       }
