@@ -1,7 +1,6 @@
 import { drive_v3, google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library';
 import * as fs from 'fs';
-import * as readline from 'readline';
 import * as mime from 'mime-types';
 import * as path from 'path';
 import Config from '@/config';
@@ -122,6 +121,7 @@ const allFileTypes: FieldsType[] = [
 export interface Schema$File$Modded extends Schema$File {
   isDeleted: boolean;
   isFolder: boolean;
+  parentFolder?: string;
 }
 
 export class GDrive {
@@ -163,9 +163,9 @@ export class GDrive {
 
   public isDeleted(file: Schema$File): boolean {
     if (file.hasOwnProperty('trashed')) {
-      return file.trashed;
+      return !!file.trashed;
     }
-    return undefined;
+    return false;
   }
 
   async listFiles(fields?: boolean | FieldsType[], pageSize = 50): Promise<Schema$File$Modded[]> {
@@ -182,7 +182,7 @@ export class GDrive {
       includeTeamDriveItems: false,
     };
     return this.drive.files.list(info)
-        .then(({ data }) => this.parseFilesMeta(data.files))
+        .then(({ data }) => this.parseFilesMeta(data.files || []))
         .catch(this.genericError);
   }
 
@@ -217,12 +217,12 @@ export class GDrive {
     await this.initiated;
     const { create, replace } = options || {} as any;
     const name = path.basename(file);
-    const mimeType = mime.contentType(file);
+    const mimeType = mime.contentType(file) || undefined;
     const requestBody: Schema$File = {
       name,
       mimeType,
     };
-    let folderId: string;
+    let folderId: string = '';
     if (folderName && typeof folderName === 'string') {
       folderId = await this.findFolderId(folderName, create === undefined ? true : create);
       if (folderId) {
@@ -250,17 +250,7 @@ export class GDrive {
       },
       fields: `kind, ${this.DEFAULT_FIELDS.join(', ')}`,
     };
-    const fileSize = fs.statSync(file).size;
-    const onUploadProgress = (evt) => {
-      const progress = (evt.bytesRead / fileSize) * 100;
-      readline.clearLine(undefined, undefined);
-      readline.cursorTo(undefined, 0);
-      process.stdout.write(`${Config.TAG} Upload ${name}: ${Math.round(progress)}% complete`);
-      if (progress === 100) {
-        process.stdout.write('\n');
-      }
-    };
-    return this.drive.files.create(createOptions, { onUploadProgress })
+    return this.drive.files.create(createOptions)
         .then(({ data }) => data)
         .catch(this.genericError);
   }
@@ -271,7 +261,7 @@ export class GDrive {
       options?: { compress?: string | boolean; replace?: boolean; create?: boolean },
   ): Promise<{ [filename: string]: Schema$File$Modded }> {
     await this.initiated;
-    let { compress, replace, create } = options;
+    let { compress, replace, create } = options || { compress: undefined, replace: undefined, create: undefined };
     if (compress === undefined) {
       compress = false;
     }
@@ -304,7 +294,7 @@ export class GDrive {
     const match = timeSpace.match(/([0-9]+)(\w+)/);
     if (!match) {
       console.error(`${Config.TAG} Unknown timesSpace "${timeSpace}"`);
-      return null;
+      return Promise.reject(false);
     }
     await this.initiated;
     let folderId: string;
@@ -319,7 +309,7 @@ export class GDrive {
       const [, time, granulary] = match;
       const filtered = files
           .filter((file) => !folderId || (folderId && !file.isFolder))
-          .filter((file) => !folderId || (folderId && file.parents.includes(folderId)))
+          .filter((file) => !folderId || (folderId && file.parents && file.parents.includes(folderId)))
           .map((file) => {
             return {
               ...file,
@@ -340,7 +330,7 @@ export class GDrive {
     return {
       ...file,
       isDeleted: this.isDeleted(file),
-      isFolder: this.isFolder(file),
+      isFolder: !!this.isFolder(file),
     };
   }
 
@@ -360,20 +350,20 @@ export class GDrive {
         .filter((file) => file.name === folderName)
         .map((file) => file.id);
     if (folder && folder.length) {
-      return folder[0];
+      return Promise.resolve(folder[0] || '');
     } else if (create) {
       const createdFolder = await this.createFolder(folderName);
-      return createdFolder.id;
+      return Promise.resolve(createdFolder.id || '');
     }
-    return null;
+    return Promise.reject(false);
   }
 
-  private async findFile(fileName: string, folderId?: string): Promise<Schema$File$Modded> {
+  private async findFile(fileName: string, folderId?: string) {
     const file = (await this.listFiles())
         .filter((file) => !file.isFolder)
         .filter((file) => !file.isDeleted)
         .filter((file) => file.name === fileName)
-        .filter((file) => !folderId || file.parents.some((folder) => folder === folderId));
+        .filter((file) => !folderId || file.parents && file.parents.some((folder) => folder === folderId));
     if (file && file.length) {
       return file[0];
     }
