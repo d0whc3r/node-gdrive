@@ -1,5 +1,4 @@
 import { drive_v3, google } from 'googleapis';
-import { OAuth2Client } from 'google-auth-library';
 import * as fs from 'fs';
 import * as mime from 'mime-types';
 import * as path from 'path';
@@ -124,6 +123,15 @@ export interface Schema$File$Modded extends Schema$File {
   parentFolder?: string;
 }
 
+export interface UploadOptionsBasic {
+  create?: boolean;
+  replace?: boolean;
+};
+
+export interface UploadOptions extends UploadOptionsBasic {
+  compress?: string | boolean;
+}
+
 export class GDrive {
   public readonly DEFAULT_FIELDS: FieldsType[] = [
     'createdTime',
@@ -146,7 +154,7 @@ export class GDrive {
     });
   }
 
-  private get auth(): OAuth2Client {
+  private get auth(): any {
     return this.gdriveAuth.oAuth2Client(true);
   }
 
@@ -203,7 +211,7 @@ export class GDrive {
     await this.initiated;
     return this.drive.files.delete({ fileId: file.id })
         .then(({ data }) => {
-          console.log(`${Config.TAG} Deleted ${file.isFolder ? 'folder' : 'file'}: ${file.name}`);
+          console.warn(`${Config.TAG} Deleted ${file.isFolder ? 'folder' : 'file'}: ${file.name}`);
           return data;
         })
         .catch(this.genericError);
@@ -212,7 +220,7 @@ export class GDrive {
   async uploadFile(
       file: string,
       folderName?: string | boolean,
-      options?: { create?: boolean; replace?: boolean },
+      options?: UploadOptionsBasic,
   ): Promise<Schema$File> {
     await this.initiated;
     const { create, replace } = options || {} as any;
@@ -222,27 +230,19 @@ export class GDrive {
       name,
       mimeType,
     };
-    let folderId: string = '';
-    if (folderName && typeof folderName === 'string') {
-      folderId = await this.findFolderId(folderName, create === undefined ? true : create);
-      if (folderId) {
-        requestBody.parents = [folderId];
-      } else {
-        return Promise.reject(
-            new Error(`${Config.TAG} Folder "${folderName}" does not exists and will not be created`));
-      }
+    let folderId = null;
+    try {
+      folderId = await this.getUploadFolderId(folderName || false, create, requestBody);
+    } catch (err) {
+      return Promise.reject(err);
     }
-    if (replace !== undefined) {
-      const searchFile = await this.findFile(name, folderId);
-      if (searchFile) {
-        if (!replace) {
-          return Promise.reject(new Error(`${Config.TAG} File "${name}" already exists and will not be replaced`));
-        } else {
-          console.warn(`${Config.TAG} File "${name}" already exists and will be deleted before upload`);
-          await this.deleteFile(searchFile);
-        }
-      }
+
+    try {
+      await this.replaceExistingFolder(replace, name, folderId);
+    } catch (err) {
+      return Promise.reject(err);
     }
+
     const createOptions: Params$Resource$Files$Create = {
       requestBody,
       media: {
@@ -255,16 +255,44 @@ export class GDrive {
         .catch(this.genericError);
   }
 
+  private async replaceExistingFolder(replace: boolean, name: string, folderId: string) {
+    if (replace !== undefined) {
+      const searchFile = await this.findFile(name, folderId);
+      if (searchFile) {
+        if (!replace) {
+          throw new Error(`${Config.TAG} File "${name}" already exists and will not be replaced`);
+        } else {
+          console.warn(`${Config.TAG} File "${name}" already exists and will be deleted before upload`);
+          await this.deleteFile(searchFile);
+        }
+      }
+    }
+  }
+
+  private async getUploadFolderId(
+      folderName: string | boolean,
+      create: boolean,
+      requestBody: drive_v3.Schema$File,
+  ) {
+    let folderId = '';
+    if (folderName && typeof folderName === 'string') {
+      folderId = await this.findFolderId(folderName, create === undefined ? true : create);
+      if (folderId) {
+        requestBody.parents = [folderId];
+      } else {
+        throw new Error(`${Config.TAG} Folder "${folderName}" does not exists and will not be created`);
+      }
+    }
+    return folderId;
+  }
+
   async uploadFiles(
       files: string[],
       folderName?: string | boolean,
-      options?: { compress?: string | boolean; replace?: boolean; create?: boolean },
+      options: UploadOptions = {},
   ): Promise<{ [filename: string]: Schema$File$Modded }> {
     await this.initiated;
-    let { compress, replace, create } = options || { compress: undefined, replace: undefined, create: undefined };
-    if (compress === undefined) {
-      compress = false;
-    }
+    const { compress, replace, create } = options;
     let uploadFiles = files;
     if (compress) {
       let zipName = compress;
@@ -297,16 +325,22 @@ export class GDrive {
       return Promise.reject(false);
     }
     await this.initiated;
-    let folderId: string;
+    let folderId = '';
     if (folderName) {
       try {
         folderId = await this.findFolderId(folderName, false);
-      } catch (_) {
+      } catch (err) {
+        console.error('Could not find folder', folderName, err);
+        return Promise.reject(false);
       }
     }
+    await this.deleteOlder(match, folderId);
+  }
+
+  private async deleteOlder(match: string[], folderId: string) {
     const files = await this.listFiles();
     if (files && files.length) {
-      const [, time, granulary] = match;
+      const [, time, granularity] = match;
       const filtered = files
           .filter((file) => !folderId || (folderId && !file.isFolder))
           .filter((file) => !folderId || (folderId && file.parents && file.parents.includes(folderId)))
@@ -314,12 +348,12 @@ export class GDrive {
             return {
               ...file,
               toDelete: moment(file.createdTime)
-                  .isSameOrBefore(moment().subtract(time as DurationConstructor, granulary)),
+                  .isSameOrBefore(moment().subtract(time as DurationConstructor, granularity)),
             };
           })
           .filter((file) => file.toDelete);
       if (filtered && filtered.length) {
-        for (let file of filtered) {
+        for (const file of filtered) {
           await this.deleteFile(file);
         }
       }
