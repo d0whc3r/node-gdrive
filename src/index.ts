@@ -126,7 +126,7 @@ export interface Schema$File$Modded extends Schema$File {
 export interface UploadOptionsBasic {
   create?: boolean;
   replace?: boolean;
-};
+}
 
 export interface UploadOptions extends UploadOptionsBasic {
   compress?: string | boolean;
@@ -348,7 +348,7 @@ export class GDrive {
             return {
               ...file,
               toDelete: moment(file.createdTime)
-                  .isSameOrBefore(moment().subtract(time as DurationConstructor, granularity)),
+                  .isSameOrBefore(moment().subtract(granularity, time as DurationConstructor)),
             };
           })
           .filter((file) => file.toDelete);
