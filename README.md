@@ -14,6 +14,10 @@ Utility to manipulate google drive using nodejs. It could upload content to goog
 [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=d0whc3r_node-gdrive&metric=bugs)](https://sonarcloud.io/dashboard?id=d0whc3r_node-gdrive)
 [![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=d0whc3r_node-gdrive&metric=vulnerabilities)](https://sonarcloud.io/dashboard?id=d0whc3r_node-gdrive)
 ![dependencies](https://img.shields.io/david/d0whc3r/node-gdrive.svg)
+[![npm version](https://img.shields.io/npm/v/@d0whc3r%2Fnode-gdrive.svg)](https://www.npmjs.com/package/@d0whc3r/node-gdrive)
+[![](https://img.shields.io/docker/cloud/build/d0whc3r/gdrive.svg)](https://hub.docker.com/r/d0whc3r/gdrive)
+[![](https://images.microbadger.com/badges/version/d0whc3r/gdrive.svg)](https://hub.docker.com/r/d0whc3r/gdrive)
+[![](https://images.microbadger.com/badges/image/d0whc3r/gdrive.svg)](https://hub.docker.com/r/d0whc3r/gdrive)
 
 ## :key: Create credentials and token files
 
