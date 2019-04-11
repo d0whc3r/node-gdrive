@@ -32,8 +32,7 @@
     "test": "jest",
     "test:coverage": "yarn test --coverage",
     "test:codecovs": "yarn test:coverage && codecov -f coverage/*.json",
-    "test:coveralls": "yarn test:coverage && cat ./coverage/lcov.info | coveralls",
-    "postversion": "git push --follow-tags"
+    "test:coveralls": "yarn test:coverage && cat ./coverage/lcov.info | coveralls"
   },
   "dependencies": {
     "archiver": "3.0.0",
