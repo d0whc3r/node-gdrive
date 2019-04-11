@@ -1,8 +1,21 @@
-# Node gdrive
+
+# :floppy_disk: Node gdrive
 
 Utility to manipulate google drive using nodejs. It could upload content to google drive and it could be used as backup service.
 
-## Create credentials and token files
+# :eyes: Project status
+
+[![pipeline status](https://gitlab.com/d0whc3r/node-gdrive/badges/master/pipeline.svg)](https://github.com/d0whc3r/node-gdrive)
+[![codecov](https://codecov.io/gh/d0whc3r/node-gdrive/branch/master/graph/badge.svg)](https://codecov.io/gh/d0whc3r/node-gdrive)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/2612116bab5f493cada70bffc3cb6492)](https://www.codacy.com/app/d0whc3r/node-gdrive?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=d0whc3r/node-gdrive&amp;utm_campaign=Badge_Grade)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=d0whc3r_node-gdrive&metric=alert_status)](https://sonarcloud.io/dashboard?id=d0whc3r_node-gdrive)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=d0whc3r_node-gdrive&metric=sqale_rating)](https://sonarcloud.io/dashboard?id=d0whc3r_node-gdrive)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=d0whc3r_node-gdrive&metric=security_rating)](https://sonarcloud.io/dashboard?id=d0whc3r_node-gdrive)
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=d0whc3r_node-gdrive&metric=bugs)](https://sonarcloud.io/dashboard?id=d0whc3r_node-gdrive)
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=d0whc3r_node-gdrive&metric=vulnerabilities)](https://sonarcloud.io/dashboard?id=d0whc3r_node-gdrive)
+![dependencies](https://img.shields.io/david/d0whc3r/node-gdrive.svg)
+
+## :key: Create credentials and token files
 
 To get `credentials.json` file you need to visit:
 - [https://developers.google.com/drive/api/v3/quickstart/nodejs](https://developers.google.com/drive/api/v3/quickstart/nodejs)
@@ -12,7 +25,7 @@ Then click `ENABLE THE DRIVE API` and click `DOWNLOAD CLIENT CONFIGURATION`
 This will download **credentials.json** file, you can save it in *secrets* folder in the project.
 Now you need to generate **token.json** file, to do this you need to execute any command to access your google-drive, for example:
 
-### Using docker
+### :boat: Using docker
 
 Then you could execute a simple command to generate token.json:
 
@@ -22,7 +35,7 @@ Then you could execute a simple command to generate token.json:
 docker run --rm -v $PWD/secrets:/app/secrets/ d0whc3r/gdrive -l
 ```
 
-### Using downloaded project
+### :pencil: Using downloaded project
 
 > First you need to download project from github using:
 
@@ -38,7 +51,7 @@ Then you could execute a simple command to generate token.json:
 yarn cli -l
 ```
 
-### Next step
+### :beginner: Next step
 
 Using docker or project files the `-l` command is for listing existing files in google-drive
 
@@ -48,17 +61,17 @@ By default this software check for credentials (and token) file in folder `secre
 - **CREDENTIALS_FILE**: File with credentials (credentials.json)
 - **TOKEN_FILE**: File with token, generated using credentials (token.json)
 
-## Docker usage
+## :boat: Docker usage
 
 You could use cli app in docker
 
-### Build docker image
+### :rowboat: Build docker image
 
 ```bash
 docker build -t gdrive .
 ```
 
-### Run cli commands inside docker
+### :checkered_flag: Run cli commands inside docker
 
 ```bash
 docker run --rm gdrive --help
@@ -69,7 +82,7 @@ To make docker image work properly you need to indicate where credentials and to
 docker run --rm -v $PWD/secrets:/app/secrets:ro gdrive -l
 ```
 
-## Cli help output
+## :checkered_flag: Cli help output
 
 Using docker image from [hub.docker.com](https://hub.docker.com/r/d0whc3r/gdrive)
 
