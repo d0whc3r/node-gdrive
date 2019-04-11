@@ -21,10 +21,13 @@ install-deps:
 
 tests:
   stage: test
-  script:
+  before_script:
     - mkdir -p secrets
     - echo ${CREDENTIALS_JSON} > secrets/credentials.json
     - echo ${TOKEN_JSON} > secrets/token.json
+  after_script:
+    - rm -fr secrets
+  script:
     - yarn test:codecovs -t ${CODECOVS_TOKEN}
   coverage: '/All files\s*\|\s*([\d.]+)/'
   artifacts:
