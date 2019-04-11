@@ -23,8 +23,8 @@ tests:
   stage: test
   script:
     - mkdir -p secrets
-    - echo "${CREDENTIALS_JSON}" > secrets/credentials.json
-    - echo "${TOKEN_JSON}" > secrets/token.json
+    - echo ${CREDENTIALS_JSON} > secrets/credentials.json
+    - echo ${TOKEN_JSON} > secrets/token.json
     - yarn test:codecovs -t ${CODECOVS_TOKEN}
   coverage: '/All files\s*\|\s*([\d.]+)/'
   artifacts:
