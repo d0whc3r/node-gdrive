@@ -17,6 +17,9 @@ stages:
 before_script:
   - export GH_REPO=https://${GH_TOKEN}:x-oauth-basic@github.com/d0whc3r/node-gdrive
 
+after_script:
+  - rm -fr .npmrc
+
 install-deps:
   stage: install
   script:
