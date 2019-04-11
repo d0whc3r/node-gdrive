@@ -1,5 +1,5 @@
 {
-  "name": "node-gdrive",
+  "name": "@d0whc3r/node-gdrive",
   "version": "1.0.0",
   "license": "MIT",
   "author": {
@@ -17,6 +17,8 @@
     "drive",
     "gdrive",
     "backup",
+    "upload",
+    "compress",
     "copy",
     "googleapi"
   ],
