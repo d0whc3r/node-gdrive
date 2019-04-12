@@ -3,6 +3,8 @@ import { createCredentialsFile, DEFAULT_TIMEOUT } from './helper';
 // @ts-ignore
 import { stdin } from 'mock-stdin';
 import * as nock from 'nock';
+import * as fs from 'fs';
+import Config from '../src/config';
 
 let auth: Auth;
 describe('Check credentials', () => {
@@ -26,6 +28,7 @@ describe('Check credentials', () => {
 
     beforeAll(() => {
       createCredentialsFile();
+      expect(fs.existsSync(Config.CREDENTIALS_FILE)).toBeTruthy();
       auth = new Auth();
       expect(auth.ready).toBeTruthy();
       expect(mockStdIn).toBeDefined();
@@ -68,6 +71,7 @@ describe('Check credentials', () => {
       resultPromise
           .then((data) => {
             expect(data).toBeDefined();
+            expect(fs.existsSync(Config.TOKEN_FILE)).toBeTruthy();
           })
           .catch(() => {
             fail('Mocked response should be valid');
