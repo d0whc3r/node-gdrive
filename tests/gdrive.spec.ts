@@ -7,6 +7,16 @@ import Config from '../src/config';
 let canContinue = false;
 const DEFAULT_TIMEOUT = 15000;
 
+async function deleteAllFiles(gDrive: GDrive) {
+  const files = await gDrive.listFiles();
+  for (let i = 0; i < files.length; i++) {
+    await gDrive.deleteFile(files[i]);
+  }
+}
+
+// Variable set to true in CI
+const DELETE_ALL_FILES: string | boolean | number = process.env.DELETE_ALL_FILES || false;
+
 describe('Basic GDrive initialize', () => {
 
   beforeAll(() => {
@@ -19,12 +29,18 @@ describe('Basic GDrive initialize', () => {
     canContinue = true;
   });
 
-  it('check for credentials', () => {
+  it('check for credentials', async (done) => {
     canContinue = false;
     expect(fs.existsSync(Config.CREDENTIALS_FILE)).toBeTruthy();
     expect(fs.existsSync(Config.TOKEN_FILE)).toBeTruthy();
     canContinue = true;
-  });
+
+    if ([true, 'true', 1, '1'].includes(DELETE_ALL_FILES)) {
+      console.warn('--- FORCE CLEAN ALL FILES IN ACCOUNT');
+      await deleteAllFiles(new GDrive());
+    }
+    done();
+  }, DEFAULT_TIMEOUT);
 
   describe('Gdrive tests', () => {
     const gDrive = new GDrive();
@@ -47,18 +63,22 @@ describe('Basic GDrive initialize', () => {
       // Delete ALL files
       if (canClean) {
         console.warn('---- START AFTER EACH ----');
-        const files = await gDrive.listFiles();
-        for (let i = 0; i < files.length; i++) {
-          let file = files[i];
-          await gDrive.deleteFile(file);
-        }
+        await deleteAllFiles(gDrive);
         console.warn('---- END AFTER EACH ----');
         done();
       }
     });
 
+    it('Empty trash', async (done) => {
+      const result = await gDrive.emptyTrash();
+      expect(result).toBeDefined();
+      expect(result.status).toBeGreaterThanOrEqual(200);
+      expect(result.status).toBeLessThan(300);
+      done();
+    }, DEFAULT_TIMEOUT);
+
     describe('Upload single file', () => {
-      const sampleFile = './tests/sample.txt';
+      const sampleFile = './tests/sample/sample.txt';
       const fileName = path.basename(sampleFile);
       const folderName = 'test folder single';
 
