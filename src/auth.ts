@@ -81,8 +81,8 @@ export default class Auth {
           this.oAuth2Client(false).setCredentials(tokens);
           this.writeToken(tokens, promise);
         })
-        .catch((err: any) => {
-          console.error(colors.bold(`${Config.TAG} Error retrieving access token`).red, err);
+        .catch((err: Error) => {
+          console.error(colors.bold(`${Config.TAG} Error retrieving access token`).red, err.message);
           return promise.reject(err);
         });
   }
