@@ -61,6 +61,15 @@ export interface Schema$File$Modded extends Schema$File {
   parentFolder?: string;
 }
 
+export interface UploadOptionsBasic {
+  create?: boolean;
+  replace?: boolean;
+}
+
+export interface UploadOptions extends UploadOptionsBasic {
+  compress?: string | boolean;
+}
+
 export declare class GDrive {
   readonly DEFAULT_FIELDS: FieldsType[];
   private gdriveAuth;
@@ -78,27 +87,24 @@ export declare class GDrive {
 
   listFiles(fields?: boolean | FieldsType[], pageSize?: number): Promise<Schema$File$Modded[]>;
 
-  getFile(fileId: string): Promise<Schema$File>;
+  getFile(fileId?: string): Promise<Schema$File>;
 
   emptyTrash(): Promise<import('gaxios').GaxiosResponse<void>>;
 
   deleteFile(file: Schema$File$Modded): Promise<void>;
 
-  uploadFile(file: string, folderName?: string | boolean, options?: {
-    create?: boolean;
-    replace?: boolean;
-  }): Promise<Schema$File>;
+  uploadFile(file: string, folderName?: string | boolean, options?: UploadOptionsBasic): Promise<Schema$File>;
 
-  uploadFiles(files: string[], folderName?: string | boolean, options?: {
-    compress?: string | boolean;
-    replace?: boolean;
-    create?: boolean;
-  }): Promise<{
+  private replaceExistingFolder;
+  private getUploadFolderId;
+
+  uploadFiles(files: string | string[], folderName?: string | boolean, options?: UploadOptions): Promise<{
     [filename: string]: Schema$File$Modded;
   }>;
 
   cleanOlder(timeSpace: string, folderName?: string): Promise<void>;
 
+  private deleteOlder;
   private parseFileMeta;
   private parseFilesMeta;
   private genericError;
@@ -109,3 +115,5 @@ export declare class GDrive {
 }
 
 export as namespace gdrive;
+
+export {};

@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import Config from '../src/config';
 
-export const isCI = !!process.env.CI || false;
+export const isCI = !!process.env.CI || !!process.env.CI_JOB_ID || false;
 export const DEFAULT_TIMEOUT = 15000;
 
 export function deleteCredentialsFile() {

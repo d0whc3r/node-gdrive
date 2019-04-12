@@ -15,6 +15,7 @@ stages:
   - update
 
 before_script:
+  - export CI=true
   - export GH_REPO=https://${GH_TOKEN}:x-oauth-basic@github.com/d0whc3r/node-gdrive
 
 after_script:
