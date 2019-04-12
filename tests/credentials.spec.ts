@@ -58,9 +58,7 @@ describe('Check credentials', () => {
       expect(mockStdIn).toBeDefined();
       nock('https://oauth2.googleapis.com')
           .post('/token')
-          .reply(200, {
-            tokens: process.env.TOKEN_JSON || 'mocked',
-          });
+          .reply(200, JSON.parse(process.env.TOKEN_JSON || '{ "token": "mocked" }'));
 
       const resultPromise = auth.initiate();
       setTimeout(() => {
