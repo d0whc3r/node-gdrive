@@ -9,6 +9,8 @@ import Config from '../src/config';
 let auth: Auth;
 describe('Check credentials', () => {
   beforeAll(() => {
+    fs.unlinkSync(Config.CREDENTIALS_FILE);
+    fs.unlinkSync(Config.TOKEN_FILE);
     auth = new Auth();
   });
 
