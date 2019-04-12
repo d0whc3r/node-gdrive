@@ -226,7 +226,7 @@ export class GDrive {
       file: string,
       folderName?: string | boolean,
       options?: UploadOptionsBasic,
-  ): Promise<Schema$File> {
+  ): Promise<Schema$File$Modded> {
     await this.initiated;
     const { create, replace } = options || {} as any;
     const name = path.basename(file);
@@ -264,7 +264,7 @@ export class GDrive {
       }
     };
     return this.drive.files.create(createOptions, { onUploadProgress })
-        .then(({ data }) => data)
+        .then(({ data }) => this.parseFileMeta(data))
         .catch(this.genericError);
   }
 
