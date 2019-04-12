@@ -49,7 +49,7 @@
     "command-line-args": "5.1.1",
     "command-line-usage": "5.0.5",
     "dotenv-cli": "2.0.0",
-    "dts-bundle-generator": "2.1.0",
+    "dts-bundle-generator": "3.0.0",
     "glob": "7.1.3",
     "jest": "24.7.1",
     "mysqldump": "2.3.0",
