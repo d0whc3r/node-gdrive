@@ -194,8 +194,11 @@ export class GDrive {
         .catch(this.genericError);
   }
 
-  async getFile(fileId: string): Promise<Schema$File> {
+  async getFile(fileId?: string): Promise<Schema$File> {
     await this.initiated;
+    if (!fileId) {
+      return Promise.reject(this.genericError(new Error('File id not found')));
+    }
     const info: Params$Resource$Files$Get = { fileId };
     return this.drive.files.get(info)
         .then(({ data }) => data)
@@ -250,7 +253,15 @@ export class GDrive {
       },
       fields: `kind, ${this.DEFAULT_FIELDS.join(', ')}`,
     };
-    return this.drive.files.create(createOptions)
+
+    const fileSize = fs.statSync(file).size;
+    const onUploadProgress = (evt: any) => {
+      const progress = (evt.bytesRead / fileSize) * 100;
+      if (progress === 100) {
+        console.warn(`${Config.TAG} Upload ${name}: ${Math.round(progress)}% complete`);
+      }
+    };
+    return this.drive.files.create(createOptions, { onUploadProgress })
         .then(({ data }) => data)
         .catch(this.genericError);
   }
@@ -280,19 +291,23 @@ export class GDrive {
       if (folderId) {
         requestBody.parents = [folderId];
       } else {
-        throw new Error(`${Config.TAG} Folder "${folderName}" does not exists and will not be created`);
+        return Promise.reject(
+            new Error(`${Config.TAG} Folder "${folderName}" does not exists and will not be created`));
       }
     }
-    return folderId;
+    return Promise.resolve(folderId);
   }
 
   async uploadFiles(
-      files: string[],
+      files: string | string[],
       folderName?: string | boolean,
       options: UploadOptions = {},
   ): Promise<{ [filename: string]: Schema$File$Modded }> {
     await this.initiated;
     const { compress, replace, create } = options;
+    if (!Array.isArray(files)) {
+      files = [files];
+    }
     let uploadFiles = files;
     if (compress) {
       let zipName = compress;
