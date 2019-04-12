@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as moment from 'moment';
-import { GDrive } from '../src';
+import { GDrive, Schema$File$Modded } from '../src';
 import Config from '../src/config';
 import { createCredentialsFile, createTokenFile, DEFAULT_TIMEOUT, isCI } from './helper';
 
@@ -13,6 +13,9 @@ async function deleteAllFiles(gDrive: GDrive) {
     await gDrive.deleteFile(files[i]);
   }
 }
+
+let momentFormat: string;
+const mimeZip = 'application/zip';
 
 // Variable set to true in CI
 const DELETE_ALL_FILES: string | boolean | number = isCI || process.env.DELETE_ALL_FILES || false;
@@ -93,10 +96,10 @@ describe('Basic GDrive initialize', () => {
         const files = await gDrive.listFiles();
         expect(files.length).toBe(1);
         const [theFile] = files;
-        expect(theFile.isDeleted).toBeFalsy();
-        expect(theFile.isFolder).toBeFalsy();
+        check1File(theFile);
 
         const file = await gDrive.getFile(theFile.id);
+        expect(file).toBeDefined();
         expect(file.id).toBe(theFile.id);
         expect(file.name).toBe(theFile.name);
         done();
@@ -116,7 +119,7 @@ describe('Basic GDrive initialize', () => {
         try {
           const result = await gDrive.getFile('NON_EXISTING_FILE_ID');
           expect(result).not.toBeDefined();
-          fail('Get file of undefined must to fail');
+          fail('Get no existing file must fail');
         } catch (err) {
           expect(err).toBeDefined();
         }
@@ -125,30 +128,16 @@ describe('Basic GDrive initialize', () => {
 
       it('Backup 1 sample file to folder with create = true', async (done) => {
         const result = await gDrive.uploadFile(sampleFile, folderName, { create: true });
-        expect(result).toBeDefined();
-        expect(result.name).toBe(fileName);
-        expect(result.parents).toBeDefined();
-        expect(result.parents && result.parents.length).toBe(1);
+        check1File(result, { folder: true });
+
         const files = await gDrive.listFiles();
         expect(files.length).toBe(2);
 
         const folder = files.find((f) => f.isFolder);
-        expect(folder).toBeDefined();
-        if (folder) {
-          expect(folder.isDeleted).toBeFalsy();
-          expect(folder.isFolder).toBeTruthy();
-          expect(folder.name).toBe(folderName);
-        }
+        check1Folder(folder, folderName);
 
         const file = files.find((f) => !f.isFolder);
-        expect(file).toBeDefined();
-        if (file) {
-          expect(file.isDeleted).toBeFalsy();
-          expect(file.isFolder).toBeFalsy();
-          expect(file.name).toBe(fileName);
-          expect(file.parents).toBeDefined();
-          expect(file.parents && file.parents[0]).toBe(folder && folder.id);
-        }
+        check1File(file, { fileName, folder });
         done();
       }, DEFAULT_TIMEOUT);
 
@@ -164,60 +153,37 @@ describe('Basic GDrive initialize', () => {
 
       it('Backup the same file twice with replace', async (done) => {
         let result = await gDrive.uploadFile(sampleFile);
-        expect(result).toBeDefined();
-        expect(result.name).toBe(fileName);
+        check1File(result, { fileName });
         result = await gDrive.uploadFile(sampleFile, false, { replace: true });
-        expect(result).toBeDefined();
-        expect(result.name).toBe(fileName);
+        check1File(result, { fileName });
 
         const files = await gDrive.listFiles();
         expect(files.length).toBe(1);
         const [theFile] = files;
-        expect(theFile.name).toBe(fileName);
-        expect(theFile.isDeleted).toBeFalsy();
-        expect(theFile.isFolder).toBeFalsy();
+        check1File(theFile, { fileName });
         done();
       }, DEFAULT_TIMEOUT);
 
       it('Backup the same file twice with replace to folder', async (done) => {
         let result = await gDrive.uploadFile(sampleFile, folderName);
-        expect(result).toBeDefined();
-        expect(result.name).toBe(fileName);
-        expect(result.parents).toBeDefined();
-        expect(result.parents && result.parents.length).toBe(1);
+        check1File(result, { fileName, folder: true });
         result = await gDrive.uploadFile(sampleFile, folderName, { replace: true });
-        expect(result).toBeDefined();
-        expect(result.name).toBe(fileName);
-        expect(result.parents).toBeDefined();
-        expect(result.parents && result.parents.length).toBe(1);
+        check1File(result, { fileName, folder: true });
 
         const files = await gDrive.listFiles();
         expect(files.length).toBe(2);
 
         const folder = files.find((f) => f.isFolder);
-        expect(folder).toBeDefined();
-        if (folder) {
-          expect(folder.isDeleted).toBeFalsy();
-          expect(folder.isFolder).toBeTruthy();
-          expect(folder.name).toBe(folderName);
-        }
+        check1Folder(folder, folderName);
 
         const file = files.find((f) => !f.isFolder);
-        expect(file).toBeDefined();
-        if (file) {
-          expect(file.isDeleted).toBeFalsy();
-          expect(file.isFolder).toBeFalsy();
-          expect(file.name).toBe(fileName);
-          expect(file.parents).toBeDefined();
-          expect(file.parents && file.parents[0]).toBe(folder && folder.id);
-        }
+        check1File(file, { fileName, folder });
         done();
       }, DEFAULT_TIMEOUT);
 
       it('Backup the same file twice with replace = false', async (done) => {
         const result = await gDrive.uploadFile(sampleFile);
-        expect(result).toBeDefined();
-        expect(result.name).toBe(fileName);
+        check1File(result, { fileName });
         try {
           await gDrive.uploadFile(sampleFile, false, { replace: false });
           fail('If file could not be replaced, it must fail because file already exists');
@@ -229,10 +195,7 @@ describe('Basic GDrive initialize', () => {
 
       it('Backup the same file twice with replace = false to folder', async (done) => {
         const result = await gDrive.uploadFile(sampleFile, folderName);
-        expect(result).toBeDefined();
-        expect(result.name).toBe(fileName);
-        expect(result.parents).toBeDefined();
-        expect(result.parents && result.parents.length).toBe(1);
+        check1File(result, { fileName, folder: true });
         try {
           await gDrive.uploadFile(sampleFile, folderName, { replace: false });
           fail('If file could not be replaced, it must fail because file already exists');
@@ -244,22 +207,12 @@ describe('Basic GDrive initialize', () => {
 
       it('Backup the same file twice with replace not specified', async (done) => {
         let result = await gDrive.uploadFile(sampleFile);
-        expect(result).toBeDefined();
-        expect(result.name).toBe(fileName);
+        check1File(result, { fileName });
         result = await gDrive.uploadFile(sampleFile);
-        expect(result).toBeDefined();
-        expect(result.name).toBe(fileName);
+        check1File(result, { fileName });
 
         const files = await gDrive.listFiles();
-        expect(files.length).toBe(2);
-        const [theFile1, theFile2] = files;
-        expect(theFile1.name).toBe(fileName);
-        expect(theFile1.isDeleted).toBeFalsy();
-        expect(theFile1.isFolder).toBeFalsy();
-
-        expect(theFile2.name).toBe(fileName);
-        expect(theFile2.isDeleted).toBeFalsy();
-        expect(theFile2.isFolder).toBeFalsy();
+        check2Files(files, { fileName: [fileName, fileName] });
         done();
       }, DEFAULT_TIMEOUT);
 
@@ -309,65 +262,41 @@ describe('Basic GDrive initialize', () => {
       const sampleFile2 = path.join(sampleFolder, 'sample2.txt');
       const fileName2 = path.basename(sampleFile2);
       const folderName = 'test folder multiple';
-      const momentFormat = moment().format('YYYY-MM-DD');
-      const mimeZip = 'application/zip';
+
+      beforeEach(() => {
+        momentFormat = moment().format('YYYY-MM-DD');
+      });
 
       it('Backup 2 files using array (no zip)', async (done) => {
         const result = await gDrive.uploadFiles([sampleFile, sampleFile2]);
         expect(result).toBeDefined();
-        expect(result[fileName]).toBeDefined();
-        expect(result[fileName].name).toBe(fileName);
-
-        expect(result[fileName2]).toBeDefined();
-        expect(result[fileName2].name).toBe(fileName2);
+        check1File(result[fileName], { fileName });
+        check1File(result[fileName2], { fileName: fileName2 });
 
         const files = await gDrive.listFiles();
-        expect(files.length).toBe(2);
-        const [theFile1, theFile2] = files;
-        expect(theFile1.isDeleted).toBeFalsy();
-        expect(theFile1.isFolder).toBeFalsy();
-        expect(theFile2.isDeleted).toBeFalsy();
-        expect(theFile2.isFolder).toBeFalsy();
+        check2Files(files);
         done();
       }, DEFAULT_TIMEOUT);
 
       it('Backup 2 files using array (no zip) into folder', async (done) => {
         const result = await gDrive.uploadFiles([sampleFile, sampleFile2], folderName);
         expect(result).toBeDefined();
-        expect(result[fileName]).toBeDefined();
-        expect(result[fileName].name).toBe(fileName);
-        expect(result[fileName].parents).toBeDefined();
-        expect((result[fileName].parents || []).length).toBe(1);
-
-        expect(result[fileName2]).toBeDefined();
-        expect(result[fileName2].name).toBe(fileName2);
-        expect(result[fileName2].parents).toBeDefined();
-        expect((result[fileName2].parents || []).length).toBe(1);
+        check1File(result[fileName], { fileName, folder: true });
+        check1File(result[fileName2], { fileName: fileName2, folder: true });
 
         const files = await gDrive.listFiles();
         expect(files.length).toBe(3);
         const folder = files.find((f) => f.isFolder);
-        expect(folder).toBeDefined();
-        if (folder) {
-          expect(folder.isDeleted).toBeFalsy();
-          expect(folder.isFolder).toBeTruthy();
-          expect(folder.name).toBe(folderName);
-        }
+        check1Folder(folder, folderName);
 
         const filesList = files.filter((f) => !f.isFolder);
         expect(filesList).toBeDefined();
         expect(filesList.length).toBe(2);
+
         if (filesList) {
           const [theFile1, theFile2] = filesList;
           expect(theFile1.name).not.toBe(theFile2.name);
-          expect(theFile1.isDeleted).toBeFalsy();
-          expect(theFile1.isFolder).toBeFalsy();
-          expect(theFile1.parents).toBeDefined();
-          expect(theFile1.parents && theFile1.parents[0]).toBe(folder && folder.id);
-          expect(theFile2.isDeleted).toBeFalsy();
-          expect(theFile2.isFolder).toBeFalsy();
-          expect(theFile2.parents).toBeDefined();
-          expect(theFile2.parents && theFile2.parents[0]).toBe(folder && folder.id);
+          check2Files(filesList, { folder, fileName: [theFile1.name, theFile2.name] });
         }
         done();
       }, DEFAULT_TIMEOUT);
@@ -378,15 +307,12 @@ describe('Basic GDrive initialize', () => {
         const fileNames = Object.keys(result);
         expect(fileNames.length).toBe(1);
         const [fileNameZip] = fileNames;
-        expect(result[fileNameZip].name).toContain(`zipped_${momentFormat}`);
-        expect(result[fileNameZip].name).toContain('.zip');
-        expect(result[fileNameZip].mimeType).toBe(mimeZip);
+        check1ZipFile(result[fileNameZip]);
 
         const files = await gDrive.listFiles();
         expect(files.length).toBe(1);
         const [theFile] = files;
-        expect(theFile.isDeleted).toBeFalsy();
-        expect(theFile.isFolder).toBeFalsy();
+        check1ZipFile(theFile);
         done();
       }, DEFAULT_TIMEOUT);
 
@@ -396,29 +322,15 @@ describe('Basic GDrive initialize', () => {
         const fileNames = Object.keys(result);
         expect(fileNames.length).toBe(1);
         const [fileNameZip] = fileNames;
-        expect(result[fileNameZip].name).toContain(`zipped_${momentFormat}`);
-        expect(result[fileNameZip].name).toContain('.zip');
-        expect(result[fileNameZip].mimeType).toBe(mimeZip);
-        expect(result[fileNameZip].parents).toBeDefined();
-        expect((result[fileNameZip].parents || []).length).toBe(1);
+        check1ZipFile(result[fileNameZip], { folder: true });
 
         const files = await gDrive.listFiles();
         expect(files.length).toBe(2);
         const folder = files.find((f) => f.isFolder);
-        expect(folder).toBeDefined();
-        if (folder) {
-          expect(folder.isDeleted).toBeFalsy();
-          expect(folder.isFolder).toBeTruthy();
-          expect(folder.name).toBe(folderName);
-        }
+        check1Folder(folder, folderName);
 
         const file = files.find((f) => !f.isFolder);
-        expect(file).toBeDefined();
-        if (file) {
-          expect(file.isDeleted).toBeFalsy();
-          expect(file.isFolder).toBeFalsy();
-          expect(file.name).toBe(fileNameZip);
-        }
+        check1File(file, { fileName: fileNameZip });
         done();
       }, DEFAULT_TIMEOUT);
 
@@ -428,42 +340,30 @@ describe('Basic GDrive initialize', () => {
         expect(result).toBeDefined();
         const fileNames = Object.keys(result);
         expect(fileNames.length).toBe(1);
-        expect(result[fileNameZip].name).toBe(fileNameZip);
-        expect(result[fileNameZip].mimeType).toBe(mimeZip);
+        check1ZipFile(result[fileNameZip], { fileName: fileNameZip });
 
         const files = await gDrive.listFiles();
         expect(files.length).toBe(1);
         const [theFile] = files;
-        expect(theFile.isDeleted).toBeFalsy();
-        expect(theFile.isFolder).toBeFalsy();
+        check1ZipFile(theFile, { fileName: fileNameZip });
         done();
       }, DEFAULT_TIMEOUT);
 
-      it('Backup 2 files using glob (no zip)', async (done) => {
+      it('Backup using glob (no zip)', async (done) => {
         await gDrive.uploadFiles(`${sampleFolder}/*`);
 
         const files = await gDrive.listFiles();
-        expect(files.length).toBe(2);
-        const [theFile1, theFile2] = files;
-        expect(theFile1.isDeleted).toBeFalsy();
-        expect(theFile1.isFolder).toBeFalsy();
-        expect(theFile2.isDeleted).toBeFalsy();
-        expect(theFile2.isFolder).toBeFalsy();
+        check2Files(files);
         done();
       }, DEFAULT_TIMEOUT);
 
-      it('Backup 2 files using glob (no zip) into folder', async (done) => {
+      it('Backup using glob (no zip) into folder', async (done) => {
         await gDrive.uploadFiles(`${sampleFolder}/*`, folderName);
 
         const files = await gDrive.listFiles();
         expect(files.length).toBe(3);
         const folder = files.find((f) => f.isFolder);
-        expect(folder).toBeDefined();
-        if (folder) {
-          expect(folder.isDeleted).toBeFalsy();
-          expect(folder.isFolder).toBeTruthy();
-          expect(folder.name).toBe(folderName);
-        }
+        check1Folder(folder, folderName);
 
         const filesList = files.filter((f) => !f.isFolder);
         expect(filesList).toBeDefined();
@@ -471,14 +371,58 @@ describe('Basic GDrive initialize', () => {
         if (filesList) {
           const [theFile1, theFile2] = filesList;
           expect(theFile1.name).not.toBe(theFile2.name);
-          expect(theFile1.isDeleted).toBeFalsy();
-          expect(theFile1.isFolder).toBeFalsy();
-          expect(theFile1.parents).toBeDefined();
-          expect(theFile1.parents && theFile1.parents[0]).toBe(folder && folder.id);
-          expect(theFile2.isDeleted).toBeFalsy();
-          expect(theFile2.isFolder).toBeFalsy();
-          expect(theFile2.parents).toBeDefined();
-          expect(theFile2.parents && theFile2.parents[0]).toBe(folder && folder.id);
+          check2Files(filesList, { folder, fileName: [theFile1.name, theFile2.name] });
+        }
+        done();
+      }, DEFAULT_TIMEOUT);
+
+      it('Backup using glob with zip', async (done) => {
+        await gDrive.uploadFiles(`${sampleFolder}/*`, false, { compress: true });
+
+        const files = await gDrive.listFiles();
+        expect(files.length).toBe(1);
+        const [theFile] = files;
+        check1ZipFile(theFile);
+        done();
+      }, DEFAULT_TIMEOUT);
+
+      it('Backup using glob with zip into folder', async (done) => {
+        await gDrive.uploadFiles(`${sampleFolder}/*`, folderName, { compress: true });
+
+        const files = await gDrive.listFiles();
+        expect(files.length).toBe(2);
+        const folder = files.find((f) => f.isFolder);
+        check1Folder(folder, folderName);
+
+        const filesList = files.filter((f) => !f.isFolder);
+        expect(filesList.length).toBe(1);
+        check1ZipFile(filesList[0], { folder });
+        done();
+      }, DEFAULT_TIMEOUT);
+
+      it('Backup using folder (no zip)', async (done) => {
+        await gDrive.uploadFiles(sampleFolder);
+
+        const files = await gDrive.listFiles();
+        check2Files(files);
+        done();
+      }, DEFAULT_TIMEOUT);
+
+      it('Backup using folder (no zip) into folder', async (done) => {
+        await gDrive.uploadFiles(sampleFolder, folderName);
+
+        const files = await gDrive.listFiles();
+        expect(files.length).toBe(3);
+        const folder = files.find((f) => f.isFolder);
+        check1Folder(folder, folderName);
+
+        const filesList = files.filter((f) => !f.isFolder);
+        expect(filesList).toBeDefined();
+        expect(filesList.length).toBe(2);
+        if (filesList) {
+          const [theFile1, theFile2] = filesList;
+          expect(theFile1.name).not.toBe(theFile2.name);
+          check2Files(filesList, { folder, fileName: [theFile1.name, theFile2.name] });
         }
         done();
       }, DEFAULT_TIMEOUT);
@@ -487,3 +431,71 @@ describe('Basic GDrive initialize', () => {
 
   });
 });
+
+type Check1FileOptions = {
+  folder?: Schema$File$Modded | boolean;
+  fileName?: string;
+};
+
+type Check2FileOptions = {
+  folder?: Schema$File$Modded | boolean;
+  fileName?: (string | undefined)[];
+};
+
+function check1File(file?: Schema$File$Modded, options?: Check1FileOptions) {
+  expect(file).toBeDefined();
+  if (file) {
+    expect(file).toBeDefined();
+    expect(file.isDeleted).toBeFalsy();
+    expect(file.isFolder).toBeFalsy();
+    if (options) {
+      _checkFileName(file, options.fileName);
+      _checkFileFolder(file, options.folder);
+    }
+  }
+}
+
+function _checkFileName(file: Schema$File$Modded, fileName?: string) {
+  if (fileName) {
+    expect(file.name).toBe(fileName);
+  }
+}
+
+function _checkFileFolder(file: Schema$File$Modded, folder?: Schema$File$Modded | boolean) {
+  if (folder) {
+    expect(file.parents).toBeDefined();
+    expect(file.parents && file.parents.length).toBe(1);
+    if (typeof folder !== 'boolean') {
+      expect(file.parents && file.parents[0]).toBe(folder && folder.id);
+    }
+  }
+}
+
+function check1Folder(folder?: Schema$File$Modded, folderName?: string) {
+  expect(folder).toBeDefined();
+  if (folder) {
+    expect(folder.isDeleted).toBeFalsy();
+    expect(folder.isFolder).toBeTruthy();
+    if (folderName) {
+      expect(folder.name).toBe(folderName);
+    }
+  }
+}
+
+function check2Files(files: Schema$File$Modded[], options?: Check2FileOptions) {
+  expect(files.length).toBe(2);
+  const [theFile1, theFile2] = files;
+  check1File(theFile1, options && { folder: options.folder, fileName: options.fileName && options.fileName[0] });
+  check1File(theFile2, options && { folder: options.folder, fileName: options.fileName && options.fileName[1] });
+}
+
+function check1ZipFile(file?: Schema$File$Modded, options?: Check1FileOptions) {
+  check1File(file, options);
+  if (file) {
+    expect(file.mimeType).toBe(mimeZip);
+    if (!options || (options && !options.fileName)) {
+      expect(file.name).toContain(`zipped_${momentFormat}`);
+      expect(file.name).toContain('.zip');
+    }
+  }
+}
