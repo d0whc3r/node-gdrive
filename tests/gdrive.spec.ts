@@ -45,10 +45,11 @@ describe('Basic GDrive initialize', () => {
   }, DEFAULT_TIMEOUT);
 
   describe('Gdrive tests', () => {
-    const gDrive = new GDrive();
+    let gDrive: GDrive;
     let canClean = false;
 
     beforeAll(async () => {
+      gDrive = new GDrive();
       if (!canContinue) {
         process.exit(-1);
       }
