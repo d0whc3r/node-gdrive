@@ -35,7 +35,8 @@ tests:
   after_script:
     - rm -fr secrets
   script:
-    - yarn test:codecovs -t ${CODECOVS_TOKEN}
+    - yarn test:coverage
+    - yarn test:send-coverages
   coverage: '/All files\s*\|\s*([\d.]+)/'
   artifacts:
     paths:
