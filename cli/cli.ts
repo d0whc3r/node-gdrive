@@ -19,11 +19,10 @@ class Cli {
   constructor(
       private opts = options,
       private gdrive = new GDrive()) {
-    // console.log('OPTIONS', this.opts);
   }
 
   async parseOptions() {
-    for (let command in this.opts) {
+    for (const command in this.opts) {
       const args = this.opts[command];
       const zip = this.opts['zip'];
       const folder = this.opts['folder'];
@@ -50,10 +49,10 @@ class Cli {
     const files = (await this.gdrive.listFiles())
         .filter((file) => !file.isDeleted);
     if (files.length) {
-      console.log(`${Config.TAG} File list:`);
+      console.info(`${Config.TAG} File list:`);
       this.beautifulFiles(files);
     } else {
-      console.log(`${Config.TAG} No files found.`);
+      console.info(`${Config.TAG} No files found.`);
     }
   }
 
@@ -69,7 +68,7 @@ class Cli {
         ...arg,
       };
     });
-    for (let info of parsed) {
+    for (const info of parsed) {
       const { folder, timeSpace } = info;
       await this.gdrive.cleanOlder(timeSpace, folder || undefined);
     }
@@ -130,7 +129,7 @@ class Cli {
 
   private beautifulFiles(files: Schema$File$Modded[]) {
     const parsed = files.map((file) => {
-      let fileId = file && file.parents && file.parents[0];
+      const fileId = file && file.parents && file.parents[0];
       return {
         ...file,
         parentFolder: this.findFile(files, fileId),
@@ -142,7 +141,7 @@ class Cli {
     parsed.forEach((file) => {
       const fileName = file.isFolder ? this.showFolder(file.name) : file.name;
       const parent = file.parentFolder ? this.showFolder(`${file.parentFolder}/`) : '';
-      console.log(parent + fileName);
+      console.info(parent + fileName);
     });
   }
 
