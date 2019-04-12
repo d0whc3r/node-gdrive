@@ -150,7 +150,6 @@ export class GDrive {
     this.gdriveAuth = new Auth();
     this.initiated = this.gdriveAuth.initiate();
     this.initiated.catch(() => {
-      // process.exit(-1);
       const msg = `${Config.TAG} ERROR! could not get credentials file. GDrive will not work`;
       console.error(msg);
       throw new Error(msg);
