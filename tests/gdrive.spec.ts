@@ -3,9 +3,9 @@ import * as path from 'path';
 import * as moment from 'moment';
 import { GDrive } from '../src';
 import Config from '../src/config';
+import { createCredentialsFile, createTokenFile, DEFAULT_TIMEOUT, isCI } from './helper';
 
 let canContinue = false;
-const DEFAULT_TIMEOUT = 15000;
 
 async function deleteAllFiles(gDrive: GDrive) {
   const files = await gDrive.listFiles();
@@ -15,12 +15,14 @@ async function deleteAllFiles(gDrive: GDrive) {
 }
 
 // Variable set to true in CI
-const DELETE_ALL_FILES: string | boolean | number = process.env.DELETE_ALL_FILES || false;
+const DELETE_ALL_FILES: string | boolean | number = isCI || process.env.DELETE_ALL_FILES || false;
 
 describe('Basic GDrive initialize', () => {
 
   beforeAll(() => {
     canContinue = true;
+    createCredentialsFile();
+    createTokenFile();
   });
 
   it('new GDrive object', () => {
