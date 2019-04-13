@@ -5,7 +5,7 @@ import * as path from 'path';
 import Config from '@/config';
 import * as archiver from 'archiver';
 import FileUtils from '@/file.utils';
-import moment, { unitOfTime } from 'moment';
+import * as moment from 'moment';
 import * as glob from 'glob';
 import Auth from '@/auth';
 import Schema$File = drive_v3.Schema$File;
@@ -364,7 +364,7 @@ export class GDrive {
             return {
               ...file,
               toDelete: moment(file.createdTime)
-                  .isSameOrBefore(moment().subtract(+time, granularity as unitOfTime.DurationConstructor)),
+                  .isSameOrBefore(moment().subtract(+time, granularity as moment.unitOfTime.DurationConstructor)),
             };
           })
           .filter((file) => file.toDelete);
