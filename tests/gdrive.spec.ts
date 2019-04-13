@@ -447,7 +447,7 @@ describe('Basic GDrive initialize', () => {
         const result = await gDrive.uploadFile(sampleFile, folderName);
         check1File(result, { folder: true });
 
-        let files = await gDrive.listFiles();
+        const files = await gDrive.listFiles();
         expect(files.length).toBe(2);
 
         const folder = files.find((f) => f.isFolder);
