@@ -51,6 +51,13 @@ describe('Basic GDrive initialize', () => {
     let gDrive: GDrive;
     let canClean = false;
 
+    const sampleFolder = './tests/sample';
+    const sampleFile = path.join(sampleFolder, 'sample.txt');
+    const fileName = path.basename(sampleFile);
+    const sampleFile2 = path.join(sampleFolder, 'sample2.txt');
+    const fileName2 = path.basename(sampleFile2);
+    let folderName = 'test folder single';
+
     beforeAll(async () => {
       gDrive = new GDrive();
       if (!canContinue) {
@@ -84,19 +91,17 @@ describe('Basic GDrive initialize', () => {
     }, DEFAULT_TIMEOUT);
 
     describe('Upload single file', () => {
-      const sampleFile = './tests/sample/sample.txt';
-      const fileName = path.basename(sampleFile);
-      const folderName = 'test folder single';
-
       it('Backup 1 sample file', async (done) => {
         const result = await gDrive.uploadFile(sampleFile);
         expect(result).toBeDefined();
         expect(result.name).toBe(fileName);
 
-        const files = await gDrive.listFiles();
+        const files = await gDrive.listFiles(true);
         expect(files.length).toBe(1);
         const [theFile] = files;
         check1File(theFile);
+        expect(theFile.fileExtension).toBe('txt');
+        expect(theFile.iconLink).toBeDefined();
 
         const file = await gDrive.getFile(theFile.id);
         expect(file).toBeDefined();
@@ -256,12 +261,7 @@ describe('Basic GDrive initialize', () => {
     });
 
     describe('Upload multiple files', () => {
-      const sampleFolder = './tests/sample';
-      const sampleFile = path.join(sampleFolder, 'sample.txt');
-      const fileName = path.basename(sampleFile);
-      const sampleFile2 = path.join(sampleFolder, 'sample2.txt');
-      const fileName2 = path.basename(sampleFile2);
-      const folderName = 'test folder multiple';
+      folderName = 'test folder multiple';
 
       beforeEach(() => {
         momentFormat = moment().format('YYYY-MM-DD');
@@ -429,7 +429,120 @@ describe('Basic GDrive initialize', () => {
 
     });
 
+    describe('Delete files', () => {
+      folderName = 'folder for deletes';
+
+      it('Delete a file', async (done) => {
+        const result = await gDrive.uploadFile(sampleFile);
+        check1File(result, { fileName });
+
+        await gDrive.deleteFile(result);
+        await wait(3);
+        const filesRes = await gDrive.listFiles();
+        expect(filesRes.length).toBe(0);
+        done();
+      }, DEFAULT_TIMEOUT);
+
+      it('Delete a folder', async (done) => {
+        const result = await gDrive.uploadFile(sampleFile, folderName);
+        check1File(result, { folder: true });
+
+        let files = await gDrive.listFiles();
+        expect(files.length).toBe(2);
+
+        const folder = files.find((f) => f.isFolder);
+        check1Folder(folder, folderName);
+
+        const file = files.find((f) => !f.isFolder);
+        check1File(file, { fileName, folder });
+
+        if (folder) {
+          await gDrive.deleteFile(folder);
+        }
+        await wait(3);
+        const filesRes = await gDrive.listFiles();
+        expect(filesRes.length).toBe(0);
+        done();
+      }, DEFAULT_TIMEOUT);
+
+      it('Clean older than 5secs', async (done) => {
+        const result = await gDrive.uploadFile(sampleFile);
+        check1File(result, { fileName });
+        const up1 = await gDrive.listFiles();
+        expect(up1.length).toBe(1);
+
+        await wait(8);
+
+        const result2 = await gDrive.uploadFile(sampleFile2);
+        check1File(result2, { fileName: fileName2 });
+        const up2 = await gDrive.listFiles();
+        expect(up2.length).toBe(2);
+
+        await gDrive.cleanOlder('5s');
+
+        const files = await gDrive.listFiles();
+        expect(files.length).toBe(1);
+        check1File(files[0], { fileName: fileName2 });
+        done();
+      }, DEFAULT_TIMEOUT);
+
+      it('Clean older than 5secs in folder', async (done) => {
+        const result = await gDrive.uploadFile(sampleFile, folderName);
+        check1File(result, { fileName, folder: true });
+        const up1 = await gDrive.listFiles();
+        expect(up1.length).toBe(2);
+
+        await wait(8);
+
+        const result2 = await gDrive.uploadFile(sampleFile2, folderName);
+        check1File(result2, { fileName: fileName2, folder: true });
+        const up2 = await gDrive.listFiles();
+        expect(up2.length).toBe(3);
+
+        await gDrive.cleanOlder('5s', folderName);
+
+        const files = await gDrive.listFiles();
+        expect(files.length).toBe(2);
+
+        const folder = files.find((f) => f.isFolder);
+        check1Folder(folder, folderName);
+
+        const file = files.find((f) => !f.isFolder);
+        check1File(file, { fileName: fileName2, folder });
+        done();
+      }, DEFAULT_TIMEOUT);
+
+      it('Clean older than 5secs in folder with file outside', async (done) => {
+        const result = await gDrive.uploadFile(sampleFile, folderName);
+        check1File(result, { fileName, folder: true });
+        const outside = await gDrive.uploadFile(sampleFile);
+        check1File(outside, { fileName, folder: false });
+        const up1 = await gDrive.listFiles();
+        expect(up1.length).toBe(3);
+
+        await wait(8);
+
+        const result2 = await gDrive.uploadFile(sampleFile2, folderName);
+        check1File(result2, { fileName: fileName2, folder: true });
+        const up2 = await gDrive.listFiles();
+        expect(up2.length).toBe(4);
+
+        await gDrive.cleanOlder('5s', folderName);
+
+        const files = await gDrive.listFiles();
+        expect(files.length).toBe(3);
+
+        const folder = files.find((f) => f.isFolder);
+        check1Folder(folder, folderName);
+
+        const ffiles = files.filter((f) => !f.isFolder);
+        check2Files(ffiles);
+        // check1File(file, { fileName: fileName2, folder });
+        done();
+      }, DEFAULT_TIMEOUT);
+    });
   });
+
 });
 
 type Check1FileOptions = {
@@ -498,4 +611,12 @@ function check1ZipFile(file?: Schema$File$Modded, options?: Check1FileOptions) {
       expect(file.name).toContain('.zip');
     }
   }
+}
+
+function wait(timeInSecs: number) {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve(true);
+    }, timeInSecs * 1000);
+  });
 }
