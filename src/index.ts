@@ -141,7 +141,7 @@ export class GDrive {
     'parents',
     'trashed',
   ];
-  private gdriveAuth: Auth;
+  private readonly gdriveAuth: Auth;
   private readonly initiated: Promise<boolean | Error>;
   private readonly MIME_FOLDER = 'application/vnd.google-apps.folder';
 

@@ -8,14 +8,14 @@ import Config from '@/config';
 
 export default class Auth {
   public ready = true;
-  private SCOPES = [
+  private readonly SCOPES = [
     'https://www.googleapis.com/auth/drive',
     'https://www.googleapis.com/auth/drive.file', // File create/open
     'https://www.googleapis.com/auth/drive.metadata',
     'https://www.googleapis.com/auth/drive.metadata.readonly', // file metadata (readonly)
   ];
-  private TOKEN_FILE = Config.TOKEN_FILE;
-  private CREDENTIALS_FILE = Config.CREDENTIALS_FILE;
+  private readonly TOKEN_FILE = Config.TOKEN_FILE;
+  private readonly CREDENTIALS_FILE = Config.CREDENTIALS_FILE;
   private _oAuth2Client: any = null;
 
   constructor() {
