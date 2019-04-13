@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import { google } from 'googleapis';
-import { OAuth2Client } from 'google-auth-library';
+import { GetTokenResponse } from 'google-auth-library/build/src/auth/oauth2client';
+import { Credentials } from 'google-auth-library/build/src/auth/credentials';
 import * as readline from 'readline';
 import * as colors from 'colors';
 import Config from '@/config';
@@ -15,7 +16,7 @@ export default class Auth {
   ];
   private TOKEN_FILE = Config.TOKEN_FILE;
   private CREDENTIALS_FILE = Config.CREDENTIALS_FILE;
-  private _oAuth2Client: OAuth2Client = null;
+  private _oAuth2Client: any = null;
 
   constructor() {
     if (!this.existsCredentials) {
@@ -42,11 +43,11 @@ export default class Auth {
     return Promise.resolve(true);
   }
 
-  public oAuth2Client(withToken = true): OAuth2Client {
+  public oAuth2Client(withToken = true) {
     if (!this._oAuth2Client) {
       const credentials = JSON.parse(fs.readFileSync(this.CREDENTIALS_FILE, 'utf8'));
       const { client_secret, client_id, redirect_uris } = credentials.installed;
-      this._oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
+      this._oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]) as any;
       if (withToken) {
         const token = JSON.parse(fs.readFileSync(this.TOKEN_FILE, 'utf8'));
         this._oAuth2Client.setCredentials(token);
@@ -69,32 +70,32 @@ export default class Auth {
       });
       rl.question(`${Config.TAG} Enter the code from that page here: `, (code) => {
         rl.close();
-        this.oAuthGetToken(code, { resolve, reject });
+        this.oAuthGetToken(code, { resolve, reject } as PromiseConstructor);
       });
     });
   }
 
-  private oAuthGetToken(code, { resolve, reject }) {
-    this.oAuth2Client(false).getToken(code, (err, token) => {
-      if (err) {
-        console.error(colors.bold(`${Config.TAG} Error retrieving access token`).red, err);
-        reject(err);
-      } else {
-        this.oAuth2Client(false).setCredentials(token);
-        this.writeToken(token, { resolve, reject });
-      }
-    });
+  private oAuthGetToken(code: string, promise: PromiseConstructor) {
+    this.oAuth2Client(false).getToken(code)
+        .then(({ tokens }: GetTokenResponse) => {
+          this.oAuth2Client(false).setCredentials(tokens);
+          this.writeToken(tokens, promise);
+        })
+        .catch((err: Error) => {
+          console.error(colors.bold(`${Config.TAG} Error retrieving access token`).red, err.message);
+          return promise.reject(err);
+        });
   }
 
-  private writeToken(token, { resolve, reject }): void {
+  private writeToken(token: Credentials, { resolve, reject }: PromiseConstructor): void {
     fs.writeFile(this.TOKEN_FILE, JSON.stringify(token), (err) => {
       if (err) {
         console.error(err);
-        reject(err);
+        return reject(err);
       } else {
         // tslint:disable-next-line:no-console
         console.log(`${Config.TAG} Token stored to`, this.TOKEN_FILE);
-        resolve(true);
+        return resolve(true);
       }
     });
   }

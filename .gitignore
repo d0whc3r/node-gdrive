@@ -5,6 +5,7 @@ bin
 secrets
 files
 gdrive-*
+.yarn-cache
 
 # Logs
 /logs
@@ -51,5 +52,7 @@ typings/
 .yarn-integrity
 
 # dotenv environment variables file
-.env
+*.env
+
+.scannerwork
 

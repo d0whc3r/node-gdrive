@@ -142,7 +142,7 @@ if (options.help || !Object.keys(options).length) {
       ],
     },
   ];
-  console.log(commandLineUsage(sections));
+  console.info(commandLineUsage(sections));
   process.exit(1);
 }
 
