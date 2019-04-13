@@ -93,7 +93,7 @@ export declare class GDrive {
 
   deleteFile(file: Schema$File$Modded): Promise<void>;
 
-  uploadFile(file: string, folderName?: string | boolean, options?: UploadOptionsBasic): Promise<Schema$File>;
+  uploadFile(file: string, folderName?: string | boolean, options?: UploadOptionsBasic): Promise<Schema$File$Modded>;
 
   private replaceExistingFolder;
   private getUploadFolderId;
