@@ -6,13 +6,13 @@ import Config from '@/config';
 import * as archiver from 'archiver';
 import FileUtils from '@/file.utils';
 import * as moment from 'moment';
+import { unitOfTime } from 'moment';
 import * as glob from 'glob';
 import Auth from '@/auth';
 import Schema$File = drive_v3.Schema$File;
 import Params$Resource$Files$Get = drive_v3.Params$Resource$Files$Get;
 import Params$Resource$Files$List = drive_v3.Params$Resource$Files$List;
 import Params$Resource$Files$Create = drive_v3.Params$Resource$Files$Create;
-import DurationConstructor = moment.unitOfTime.DurationConstructor;
 
 export type FieldsType = 'appProperties'
     | 'capabilities'
@@ -365,7 +365,7 @@ export class GDrive {
             return {
               ...file,
               toDelete: moment(file.createdTime)
-                  .isSameOrBefore(moment().subtract(granularity, time as DurationConstructor)),
+                  .isSameOrBefore(moment().subtract(+time, granularity as unitOfTime.DurationConstructor)),
             };
           })
           .filter((file) => file.toDelete);
