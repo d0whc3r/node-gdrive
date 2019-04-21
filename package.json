@@ -44,7 +44,7 @@
     "archiver": "3.0.0",
     "google-auth-library": "3.1.2",
     "googleapis": "39.2.0",
-    "mime-types": "2.1.23",
+    "mime-types": "2.1.24",
     "moment": "2.24.0"
   },
   "devDependencies": {
