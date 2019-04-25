@@ -1,7 +1,7 @@
 import * as commandLineArgs from 'command-line-args';
+import { CommandLineOptions } from 'command-line-args';
 import * as commandLineUsage from 'command-line-usage';
 import { OptionDefinition, Section } from 'command-line-usage';
-import { CommandLineOptions } from 'command-line-args';
 
 const optionDefinitions: OptionDefinition[] = [
   {

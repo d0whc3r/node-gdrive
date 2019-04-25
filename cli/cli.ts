@@ -49,7 +49,7 @@ class Cli {
     const files = (await this.gdrive.listFiles())
         .filter((file) => !file.isDeleted);
     if (files.length) {
-      console.info(`${Config.TAG} File list:`);
+      console.info(`${Config.TAG} File list: ${files.length}`);
       this.beautifulFiles(files);
     } else {
       console.info(`${Config.TAG} No files found.`);
