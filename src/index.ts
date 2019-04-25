@@ -190,9 +190,7 @@ export class GDrive {
       prettyPrint: true,
       includeTeamDriveItems: false,
     };
-    return this.drive.files.list(info)
-        .then(({ data }) => this.parseFilesMeta(data.files || []))
-        .catch(this.genericError);
+    return this.getListFiles(info) as Promise<Schema$File$Modded[]>;
   }
 
   async getFile(fileId?: string): Promise<Schema$File> {
@@ -267,38 +265,6 @@ export class GDrive {
         .catch(this.genericError);
   }
 
-  private async replaceExistingFolder(replace: boolean, name: string, folderId: string) {
-    if (replace !== undefined) {
-      const searchFile = await this.findFile(name, folderId);
-      if (searchFile) {
-        if (!replace) {
-          throw new Error(`${Config.TAG} File "${name}" already exists and will not be replaced`);
-        } else {
-          console.warn(`${Config.TAG} File "${name}" already exists and will be deleted before upload`);
-          await this.deleteFile(searchFile);
-        }
-      }
-    }
-  }
-
-  private async getUploadFolderId(
-      folderName: string | boolean,
-      create: boolean,
-      requestBody: drive_v3.Schema$File,
-  ) {
-    let folderId = '';
-    if (folderName && typeof folderName === 'string') {
-      folderId = await this.findFolderId(folderName, create === undefined ? true : create);
-      if (folderId) {
-        requestBody.parents = [folderId];
-      } else {
-        return Promise.reject(
-            new Error(`${Config.TAG} Folder "${folderName}" does not exists and will not be created`));
-      }
-    }
-    return Promise.resolve(folderId);
-  }
-
   async uploadFiles(
       files: string | string[],
       folderName?: string | boolean,
@@ -351,6 +317,53 @@ export class GDrive {
       }
     }
     await this.deleteOlder(match, folderId);
+  }
+
+  private getListFiles(info: Params$Resource$Files$List, files: Schema$File[] = []): Promise<Schema$File$Modded[]> {
+    return this.drive.files.list(info)
+        .then(async ({ data }) => {
+          files = files.concat(data.files as Schema$File[]);
+          if (data.nextPageToken) {
+            info.pageToken = data.nextPageToken;
+            return await this.getListFiles(info, files);
+          } else {
+            return files;
+          }
+        })
+        .then((allFiles) => this.parseFilesMeta(allFiles))
+        .catch(this.genericError);
+  }
+
+  private async replaceExistingFolder(replace: boolean, name: string, folderId: string) {
+    if (replace !== undefined) {
+      const searchFile = await this.findFile(name, folderId);
+      if (searchFile) {
+        if (!replace) {
+          throw new Error(`${Config.TAG} File "${name}" already exists and will not be replaced`);
+        } else {
+          console.warn(`${Config.TAG} File "${name}" already exists and will be deleted before upload`);
+          await this.deleteFile(searchFile);
+        }
+      }
+    }
+  }
+
+  private async getUploadFolderId(
+      folderName: string | boolean,
+      create: boolean,
+      requestBody: drive_v3.Schema$File,
+  ) {
+    let folderId = '';
+    if (folderName && typeof folderName === 'string') {
+      folderId = await this.findFolderId(folderName, create === undefined ? true : create);
+      if (folderId) {
+        requestBody.parents = [folderId];
+      } else {
+        return Promise.reject(
+            new Error(`${Config.TAG} Folder "${folderName}" does not exists and will not be created`));
+      }
+    }
+    return Promise.resolve(folderId);
   }
 
   private async deleteOlder(match: string[], folderId: string) {
