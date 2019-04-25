@@ -4,7 +4,7 @@ import { GetTokenResponse } from 'google-auth-library/build/src/auth/oauth2clien
 import { Credentials } from 'google-auth-library/build/src/auth/credentials';
 import * as readline from 'readline';
 import * as colors from 'colors';
-import Config from '@/config';
+import Config from './config';
 
 export default class Auth {
   public ready = true;

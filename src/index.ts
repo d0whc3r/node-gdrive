@@ -2,12 +2,12 @@ import { drive_v3, google } from 'googleapis';
 import * as fs from 'fs';
 import * as mime from 'mime-types';
 import * as path from 'path';
-import Config from '@/config';
+import Config from './config';
 import * as archiver from 'archiver';
-import FileUtils from '@/file.utils';
+import FileUtils from './file.utils';
 import * as moment from 'moment';
 import * as glob from 'glob';
-import Auth from '@/auth';
+import Auth from './auth';
 import Schema$File = drive_v3.Schema$File;
 import Params$Resource$Files$Get = drive_v3.Params$Resource$Files$Get;
 import Params$Resource$Files$List = drive_v3.Params$Resource$Files$List;
@@ -190,7 +190,7 @@ export class GDrive {
       prettyPrint: true,
       includeTeamDriveItems: false,
     };
-    return this.getListFiles(info) as Promise<Schema$File$Modded[]>;
+    return this.getListFiles(info);
   }
 
   async getFile(fileId?: string): Promise<Schema$File> {
@@ -325,7 +325,7 @@ export class GDrive {
           files = files.concat(data.files as Schema$File[]);
           if (data.nextPageToken) {
             info.pageToken = data.nextPageToken;
-            return await this.getListFiles(info, files);
+            return this.getListFiles(info, files);
           } else {
             return files;
           }
