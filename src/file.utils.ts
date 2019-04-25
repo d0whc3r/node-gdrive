@@ -1,6 +1,6 @@
 import * as path from 'path';
 import * as fs from 'fs';
-import Config from '@/config';
+import Config from './config';
 
 export default class FileUtils {
   public static mkdirp(targetDir: string): void {
