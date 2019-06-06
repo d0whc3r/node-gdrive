@@ -42,7 +42,7 @@
   },
   "dependencies": {
     "archiver": "3.0.0",
-    "google-auth-library": "4.0.0",
+    "google-auth-library": "4.2.0",
     "googleapis": "40.0.0",
     "mime-types": "2.1.24",
     "moment": "2.24.0"
