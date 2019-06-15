@@ -2457,10 +2457,10 @@ globals@^11.1.0:
   resolved "https://registry.yarnpkg.com/globals/-/globals-11.11.0.tgz#dcf93757fa2de5486fbeed7118538adf789e9c2e"
   integrity sha512-WHq43gS+6ufNOEqlrDBxVEbb8ntfXrfAUU2ZOpCxrBdGKW3gyv8mCxAfIBD0DroPKGrJ2eSsXsLtY9MPntsyTw==
 
-google-auth-library@4.2.0:
-  version "4.2.0"
-  resolved "https://registry.yarnpkg.com/google-auth-library/-/google-auth-library-4.2.0.tgz#fe1144ff07bea2852f3669b759f774fcc5171d02"
-  integrity sha512-AtIzv/MZpo8BQvt1J+ObetUVFQBAae2I3u6Wy4XqePYShHnYiRdXqWr2WWBkIllOGbWEwsq4PUfvafgw76XGLQ==
+google-auth-library@4.2.1:
+  version "4.2.1"
+  resolved "https://registry.yarnpkg.com/google-auth-library/-/google-auth-library-4.2.1.tgz#23a84a2b61a9261ef83f3dc6fe9df041923b8d3a"
+  integrity sha512-EPYsbVGekePmBwntDgT87e2jj46yyFZY5rYDvX3VjHGgJJ6yjKPdOnlXZVozUxJg5Hn35rY17rxWtthUzaKF1w==
   dependencies:
     arrify "^2.0.0"
     base64-js "^1.3.0"
