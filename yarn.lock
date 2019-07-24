@@ -4057,10 +4057,10 @@ mysql2@^1.6.5:
     seq-queue "^0.0.5"
     sqlstring "^2.3.1"
 
-mysqldump@3.0.0:
-  version "3.0.0"
-  resolved "https://registry.yarnpkg.com/mysqldump/-/mysqldump-3.0.0.tgz#682cc71f100c4f407bf9c1a34dce340ac2aae197"
-  integrity sha512-rAyQa8kz9h9XpxpPlh4x7IcKkBKZAvb01eJVqNX7rDA0lP5zmFJd90dwiTbHoLouZvx5a6mPpvbR5nhyg1K4Sw==
+mysqldump@3.1.0:
+  version "3.1.0"
+  resolved "https://registry.yarnpkg.com/mysqldump/-/mysqldump-3.1.0.tgz#5ffa95ddf3dceee55b052806c2e1f46136d8a1d2"
+  integrity sha512-3tx9wIuhfXYe5trzCB23QZosQef+cPdyq+ZqHtmD0MPIXEHwEHUDpTIrV8YXXG0miuXJtmRk7g5vDaPJSWEj5A==
   dependencies:
     deepmerge "^3.2.0"
     mysql2 "^1.6.5"
