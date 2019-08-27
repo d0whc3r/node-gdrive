@@ -82,7 +82,7 @@
     "typescript": "3.5.3",
     "webpack": "4.39.2",
     "webpack-cli": "3.3.7",
-    "webpack-merge": "4.2.1"
+    "webpack-merge": "4.2.2"
   },
   "files": [
     "dist",
