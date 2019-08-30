@@ -65,7 +65,7 @@
     "dts-bundle-generator": "3.2.0",
     "glob": "7.1.4",
     "jest": "24.9.0",
-    "jest-junit": "7.0.0",
+    "jest-junit": "8.0.0",
     "jest-sonar-reporter": "2.0.0",
     "jest-transform-stub": "2.0.0",
     "mock-stdin": "0.3.1",
