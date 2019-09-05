@@ -70,7 +70,7 @@
     "jest-transform-stub": "2.0.0",
     "mock-stdin": "0.3.1",
     "mysqldump": "3.1.0",
-    "nock": "10.0.6",
+    "nock": "11.3.3",
     "rimraf": "3.0.0",
     "sonar-scanner": "3.1.0",
     "ts-jest": "24.0.2",
