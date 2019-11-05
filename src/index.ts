@@ -193,7 +193,7 @@ export class GDrive {
     return this.getListFiles(info);
   }
 
-  async getFile(fileId?: string): Promise<Schema$File> {
+  async getFile(fileId?: string | null): Promise<Schema$File> {
     await this.initiated;
     if (!fileId) {
       return Promise.reject(this.genericError(new Error('File id not found')));
@@ -376,7 +376,7 @@ export class GDrive {
           .map((file) => {
             return {
               ...file,
-              toDelete: moment(file.createdTime)
+              toDelete: moment(file.createdTime || undefined)
                   .isSameOrBefore(moment().subtract(+time, granularity as moment.unitOfTime.DurationConstructor)),
             };
           })

@@ -547,12 +547,12 @@ describe('Basic GDrive initialize', () => {
 
 type Check1FileOptions = {
   folder?: Schema$File$Modded | boolean;
-  fileName?: string;
+  fileName?: string | null;
 };
 
 type Check2FileOptions = {
   folder?: Schema$File$Modded | boolean;
-  fileName?: (string | undefined)[];
+  fileName?: (string | null | undefined)[];
 };
 
 function check1File(file?: Schema$File$Modded, options?: Check1FileOptions) {
@@ -568,7 +568,7 @@ function check1File(file?: Schema$File$Modded, options?: Check1FileOptions) {
   }
 }
 
-function _checkFileName(file: Schema$File$Modded, fileName?: string) {
+function _checkFileName(file: Schema$File$Modded, fileName?: string | null) {
   if (fileName) {
     expect(file.name).toBe(fileName);
   }
