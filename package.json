@@ -63,7 +63,7 @@
     "coveralls": "3.0.6",
     "dotenv-cli": "2.0.1",
     "dts-bundle-generator": "3.2.0",
-    "glob": "7.1.4",
+    "glob": "7.1.6",
     "jest": "24.9.0",
     "jest-junit": "8.0.0",
     "jest-sonar-reporter": "2.0.0",
