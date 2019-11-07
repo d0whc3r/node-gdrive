@@ -1883,10 +1883,10 @@ dotenv@^7.0.0:
   resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-7.0.0.tgz#a2be3cd52736673206e8a85fb5210eea29628e7c"
   integrity sha512-M3NhsLbV1i6HuGzBUH8vXrtxOk+tWmzWKDMbAVSUp3Zsjm7ywFeuwrUXhmhQyRK1q5B5GGy7hcXPbj3bnfZg2g==
 
-dts-bundle-generator@3.2.0:
-  version "3.2.0"
-  resolved "https://registry.yarnpkg.com/dts-bundle-generator/-/dts-bundle-generator-3.2.0.tgz#2299e55a98e36bf6a4e56398bb6c5d789d7ad4fe"
-  integrity sha512-LdxqJfDQtNRtXEmBmyyejya2y+0XJztRRgAHRs6Ro+MG3zUtX5dufkxK8wJmFzLVRbNCuo0SltmthLkX4TjiPg==
+dts-bundle-generator@3.3.0:
+  version "3.3.0"
+  resolved "https://registry.yarnpkg.com/dts-bundle-generator/-/dts-bundle-generator-3.3.0.tgz#07426c3730d4e3b414630b413fa69cb75d3a353a"
+  integrity sha512-5SzZBdVc0YM3XP4RabTvXq9BeQYJ6HAHWsdwddOJNegXVtvxEPtwBsWzLVWhC80Nx9mzRaEHGko6zXqof3LcgA==
   dependencies:
     typescript ">=2.6.1"
     yargs "~13.3.0"
