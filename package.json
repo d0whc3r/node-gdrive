@@ -1,6 +1,6 @@
 {
   "name": "@d0whc3r/node-gdrive",
-  "version": "3.0.1",
+  "version": "3.1.0",
   "license": "MIT",
   "author": {
     "email": "d0whc3r@gmail.com",
@@ -52,7 +52,6 @@
     "mysqldump": "3.1.0"
   },
   "devDependencies": {
-    "google-auth-library": "5.5.1",
     "@babel/core": "7.7.2",
     "@babel/plugin-syntax-import-meta": "7.2.0",
     "@babel/plugin-transform-regenerator": "7.7.0",
@@ -71,6 +70,7 @@
     "coveralls": "3.0.7",
     "dotenv-cli": "3.0.0",
     "dts-bundle-generator": "3.3.0",
+    "google-auth-library": "5.5.1",
     "jest": "24.9.0",
     "jest-junit": "9.0.0",
     "jest-sonar-reporter": "2.0.0",
