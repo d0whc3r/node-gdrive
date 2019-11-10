@@ -1,54 +1,44 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
-    "target": "es2016",
-    "pretty": true,
-    "removeComments": true,
-    "strict": true,
-    "moduleResolution": "node",
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-    "sourceMap": false,
     "allowSyntheticDefaultImports": true,
-    "declaration": false,
-    "noStrictGenericChecks": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "noImplicitReturns": true,
-    "noImplicitThis": false,
-    "noUnusedParameters": false,
-    "noUnusedLocals": true,
-    "allowJs": true,
-    "skipLibCheck": true,
-    "resolveJsonModule": true,
-    "traceResolution": false,
-    "noEmitOnError": true,
-    "types": [
-      "node",
-      "jest"
-    ],
     "baseUrl": "./",
-    "paths": {
-      "@/*": [
-        "src/*"
-      ]
-    },
-    "typeRoots": [
-      "./node_modules/@types"
-    ],
+    "declaration": false,
+    "emitDecoratorMetadata": true,
+    "esModuleInterop": true,
+    "experimentalDecorators": true,
     "lib": [
       "es2016",
       "es6",
       "es2015",
       "dom"
     ],
-    "outDir": "out"
+    "module": "esnext",
+    "moduleResolution": "node",
+    "noEmitOnError": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": false,
+    "noStrictGenericChecks": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": false,
+    "pretty": true,
+    "removeComments": true,
+    "resolveJsonModule": true,
+    "sourceMap": false,
+    "strict": true,
+    "strictNullChecks": true,
+    "target": "es2016",
+    "traceResolution": false,
+    "types": [
+      "node",
+      "jest"
+    ]
   },
+  "exclude": [
+    "node_modules"
+  ],
   "include": [
     "./src/**/*.ts",
     "./cli/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules"
   ]
 }

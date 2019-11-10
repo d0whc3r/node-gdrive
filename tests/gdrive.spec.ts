@@ -1,9 +1,10 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as moment from 'moment';
-import { GDrive, Schema$File$Modded } from '../src';
+import { GDrive } from '../src';
 import Config from '../src/config';
 import { createCredentialsFile, createTokenFile, DEFAULT_TIMEOUT, isCI } from './helper';
+import { Schema$File$Modded } from '../src/types';
 
 let canContinue = false;
 
@@ -19,6 +20,15 @@ const mimeZip = 'application/zip';
 
 // Variable set to true in CI
 const DELETE_ALL_FILES: string | boolean | number = isCI || process.env.DELETE_ALL_FILES || false;
+
+function getSecsBetween(file1: Schema$File$Modded, file2: Schema$File$Modded) {
+  const now = +moment().toDate();
+  const time1 = +moment(file1.createdTime || undefined).toDate();
+  const time2 = +moment(file2.createdTime || undefined).toDate();
+  const difSecs = Math.abs(Math.floor((time1 - time2) / 1000));
+  const minTime = Math.min(time1, time2);
+  return Math.floor((now - minTime + Math.floor(difSecs / 2)) / 1000);
+}
 
 describe('Basic GDrive initialize', () => {
 
@@ -465,7 +475,7 @@ describe('Basic GDrive initialize', () => {
         done();
       }, DEFAULT_TIMEOUT);
 
-      it('Clean older than 5secs', async (done) => {
+      it('Clean older than', async (done) => {
         const result = await gDrive.uploadFile(sampleFile);
         check1File(result, { fileName });
         const up1 = await gDrive.listFiles();
@@ -478,7 +488,8 @@ describe('Basic GDrive initialize', () => {
         const up2 = await gDrive.listFiles();
         expect(up2.length).toBe(2);
 
-        await gDrive.cleanOlder('5s');
+        const secs = getSecsBetween(up2[0], up2[1]);
+        await gDrive.cleanOlder(`${secs}s`);
 
         const files = await gDrive.listFiles();
         expect(files.length).toBe(1);
@@ -486,7 +497,7 @@ describe('Basic GDrive initialize', () => {
         done();
       }, DEFAULT_TIMEOUT);
 
-      it('Clean older than 5secs in folder', async (done) => {
+      it('Clean older than in folder', async (done) => {
         const result = await gDrive.uploadFile(sampleFile, folderName);
         check1File(result, { fileName, folder: true });
         const up1 = await gDrive.listFiles();
@@ -499,7 +510,8 @@ describe('Basic GDrive initialize', () => {
         const up2 = await gDrive.listFiles();
         expect(up2.length).toBe(3);
 
-        await gDrive.cleanOlder('5s', folderName);
+        const secs = getSecsBetween(up2[0], up2[1]);
+        await gDrive.cleanOlder(`${secs}s`, folderName);
 
         const files = await gDrive.listFiles();
         expect(files.length).toBe(2);
@@ -512,9 +524,9 @@ describe('Basic GDrive initialize', () => {
         done();
       }, DEFAULT_TIMEOUT);
 
-      it('Clean older than 5secs in folder with file outside', async (done) => {
-        const result = await gDrive.uploadFile(sampleFile, folderName);
-        check1File(result, { fileName, folder: true });
+      it('Clean older than in folder with file outside', async (done) => {
+        const file1 = await gDrive.uploadFile(sampleFile, folderName);
+        check1File(file1, { fileName, folder: true });
         const outside = await gDrive.uploadFile(sampleFile);
         check1File(outside, { fileName, folder: false });
         const up1 = await gDrive.listFiles();
@@ -522,12 +534,13 @@ describe('Basic GDrive initialize', () => {
 
         await wait(8);
 
-        const result2 = await gDrive.uploadFile(sampleFile2, folderName);
-        check1File(result2, { fileName: fileName2, folder: true });
+        const file2 = await gDrive.uploadFile(sampleFile2, folderName);
+        check1File(file2, { fileName: fileName2, folder: true });
         const up2 = await gDrive.listFiles();
         expect(up2.length).toBe(4);
 
-        await gDrive.cleanOlder('5s', folderName);
+        const secs = getSecsBetween(file1, file2);
+        await gDrive.cleanOlder(`${secs}s`, folderName);
 
         const files = await gDrive.listFiles();
         expect(files.length).toBe(3);
@@ -537,7 +550,6 @@ describe('Basic GDrive initialize', () => {
 
         const ffiles = files.filter((f) => !f.isFolder);
         check2Files(ffiles);
-        // check1File(file, { fileName: fileName2, folder });
         done();
       }, DEFAULT_TIMEOUT);
     });
