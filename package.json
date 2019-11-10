@@ -1,6 +1,6 @@
 {
   "name": "@d0whc3r/node-gdrive",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "license": "MIT",
   "author": {
     "email": "d0whc3r@gmail.com",
@@ -42,9 +42,9 @@
   },
   "dependencies": {
     "archiver": "3.1.1",
+    "colors": "1.4.0",
     "command-line-args": "5.1.1",
     "command-line-usage": "6.1.0",
-    "colors": "1.4.0",
     "glob": "7.1.6",
     "google-auth-library": "5.5.1",
     "googleapis": "45.0.0",
