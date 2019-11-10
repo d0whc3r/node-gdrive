@@ -1,11 +1,11 @@
-// import babel from 'rollup-plugin-babel';
+import babel from 'rollup-plugin-babel';
 import json from 'rollup-plugin-json';
 import builtins from 'rollup-plugin-node-builtins';
+import builtinModules from 'builtin-modules';
 import nodeResolve from 'rollup-plugin-node-resolve';
 import typescript from 'rollup-plugin-typescript2';
 import commonjs from 'rollup-plugin-commonjs';
 import { terser } from 'rollup-plugin-terser';
-import builtinModules from 'builtin-modules';
 import pkg from './package.json';
 
 function parseName(name) {
@@ -37,6 +37,33 @@ const plugins = {
     useTsconfigDeclarationDir: false,
     objectHashIgnoreUnknownHack: true,
   }),
+  babel: babel({
+    exclude: [/\/core-js\//, /\/node_modules\//],
+    plugins: [
+      [
+        '@babel/plugin-transform-regenerator',
+        {
+          asyncGenerators: true,
+          generators: true,
+          async: true
+        }
+      ],
+      ['@babel/plugin-syntax-import-meta']
+    ],
+    presets: [
+      [
+        '@babel/env',
+        {
+          targets: {
+            browsers: '> 1%, IE 11, not dead'
+          },
+          useBuiltIns: 'usage',
+          corejs: 3
+        }
+      ]
+    ],
+    extensions
+  }),
   commonjs: commonjs(),
 };
 
@@ -56,8 +83,8 @@ function rollupConfig(pkg, options = {}) {
     input: 'src/index.ts',
     output,
     treeshake: true,
-    plugins: Object.values(plugins),
-    external: [...Object.keys(pkg.dependencies || {}), ...Object.keys(pkg.peerDependencies || {}), ...builtinModules],
+    plugins: [...Object.values(plugins), terser()],
+    external: [...Object.keys(pkg.dependencies || {}), ...Object.keys(pkg.peerDependencies || {}), ...builtinModules]
   };
 
   const buildSrc = {

@@ -13,5 +13,10 @@ FROM node:10
 ENV TOKEN_FILE=/app/secrets/token.json
 ENV CREDENTIALS_FILE=/app/secrets/credentials.json
 
-COPY --from=builder /app/bin/cli.js /bin/gdrive.js
-ENTRYPOINT ["node", "/bin/gdrive.js"]
+COPY package.json yarn.lock /app/
+COPY --from=builder /app/bin/cli.js /app/bin/cli.js
+WORKDIR /app
+
+RUN yarn install --prod --pure-lockfile
+
+ENTRYPOINT ["node", "/app/bin/cli.js"]
