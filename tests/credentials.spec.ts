@@ -2,7 +2,7 @@ import Auth from '../src/auth';
 import { createCredentialsFile, DEFAULT_TIMEOUT, deleteCredentialsFile, deleteTokenFile } from './helper';
 // @ts-ignore
 import { stdin } from 'mock-stdin';
-import * as nock from 'nock';
+import nock from 'nock';
 import * as fs from 'fs';
 import Config from '../src/config';
 

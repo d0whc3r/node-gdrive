@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import * as moment from 'moment';
+import moment from 'moment';
 import { GDrive } from '../src';
 import Config from '../src/config';
 import { createCredentialsFile, createTokenFile, DEFAULT_TIMEOUT, isCI } from './helper';

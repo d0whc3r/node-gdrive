@@ -2,8 +2,8 @@ import * as fs from 'fs';
 import { google } from 'googleapis';
 import { GetTokenResponse } from 'google-auth-library/build/src/auth/oauth2client';
 import { Credentials } from 'google-auth-library/build/src/auth/credentials';
-import * as readline from 'readline';
-import * as colors from 'colors';
+import readline from 'readline';
+import colors from 'colors';
 import Config from './config';
 
 export default class Auth {
