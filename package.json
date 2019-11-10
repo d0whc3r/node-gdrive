@@ -29,7 +29,7 @@
     "lint": "tslint -p .",
     "build:dist": "rimraf dist bin && rollup -c",
     "build:dts": "dts-bundle-generator -o src/main.d.ts src/index.ts --umd-module-name=gdrive",
-    "copy:dts": "cp src/main.d.ts build/index.d.ts",
+    "copy:dts": "cp src/main.d.ts dist/index.d.ts",
     "build": "yarn build:dist && yarn copy:dts",
     "test": "jest -i --verbose --colors",
     "test:fakeci": "dotenv -e test.env -- yarn test",
