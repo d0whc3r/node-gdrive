@@ -1,12 +1,13 @@
-import { GDrive, Schema$File$Modded } from '../src';
+import { GDrive } from '../src';
 import { options } from './cliconfig';
-import * as colors from 'colors';
+import colors from 'colors';
 import mysqldump from 'mysqldump';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as moment from 'moment';
+import moment from 'moment';
 import Config from '../src/config';
 import FileUtils from '../src/file.utils';
+import { Schema$File$Modded } from '../src/types';
 
 const theme = {
   folder: 'cyan',
@@ -68,9 +69,13 @@ class Cli {
         ...arg,
       };
     });
-    for (const info of parsed) {
-      const { folder, timeSpace } = info;
-      await this.gdrive.cleanOlder(timeSpace, folder || undefined);
+    try {
+      for (const info of parsed) {
+        const { folder, timeSpace } = info;
+        await this.gdrive.cleanOlder(timeSpace, folder || undefined);
+      }
+    } catch (e) {
+      console.error(`${Config.TAG} Error in delete files`);
     }
   }
 
@@ -118,7 +123,7 @@ class Cli {
     };
   }
 
-  private findFile(files: Schema$File$Modded[], fileId?: string) {
+  private findFile(files: Schema$File$Modded[], fileId?: string | null) {
     const result = files.find((file) => file.id === fileId);
     if (result) {
       return result.name;
@@ -175,7 +180,7 @@ class Cli {
     }
   }
 
-  private showFolder(name?: string) {
+  private showFolder(name?: string | null) {
     if (!name) {
       return '';
     }

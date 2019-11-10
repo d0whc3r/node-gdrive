@@ -1,135 +1,24 @@
-import { drive_v3, google } from 'googleapis';
+import { google } from 'googleapis';
 import * as fs from 'fs';
-import * as mime from 'mime-types';
+import mime from 'mime-types';
 import * as path from 'path';
 import Config from './config';
-import * as archiver from 'archiver';
+import archiver from 'archiver';
 import FileUtils from './file.utils';
-import * as moment from 'moment';
-import * as glob from 'glob';
+import moment from 'moment';
+import glob from 'glob';
 import Auth from './auth';
-import Schema$File = drive_v3.Schema$File;
-import Params$Resource$Files$Get = drive_v3.Params$Resource$Files$Get;
-import Params$Resource$Files$List = drive_v3.Params$Resource$Files$List;
-import Params$Resource$Files$Create = drive_v3.Params$Resource$Files$Create;
-
-export type FieldsType = 'appProperties'
-    | 'capabilities'
-    | 'contentHints'
-    | 'createdTime'
-    | 'description'
-    | 'explicitlyTrashed'
-    | 'fileExtension'
-    | 'folderColorRgb'
-    | 'fullFileExtension'
-    | 'hasAugmentedPermissions'
-    | 'hasThumbnail'
-    | 'headRevisionId'
-    | 'iconLink'
-    | 'id'
-    | 'imageMediaMetadata'
-    | 'isAppAuthorized'
-    | 'kind'
-    | 'lastModifyingUser'
-    | 'md5Checksum'
-    | 'mimeType'
-    | 'modifiedByMe'
-    | 'modifiedByMeTime'
-    | 'modifiedTime'
-    | 'name'
-    | 'originalFilename'
-    | 'ownedByMe'
-    | 'owners'
-    | 'parents'
-    | 'properties'
-    | 'quotaBytesUsed'
-    | 'shared'
-    | 'sharedWithMeTime'
-    | 'sharingUser'
-    | 'size'
-    | 'spaces'
-    | 'starred'
-    | 'teamDriveId'
-    | 'thumbnailLink'
-    | 'thumbnailVersion'
-    | 'trashed'
-    | 'trashedTime'
-    | 'trashingUser'
-    | 'version'
-    | 'videoMediaMetadata'
-    | 'viewedByMe'
-    | 'viewedByMeTime'
-    | 'viewersCanCopyContent'
-    | 'webContentLink'
-    | 'webViewLink'
-    | 'writersCanShare';
-
-const allFileTypes: FieldsType[] = [
-  'appProperties',
-  'capabilities',
-  'contentHints',
-  'createdTime',
-  'description',
-  'explicitlyTrashed',
-  'fileExtension',
-  'folderColorRgb',
-  'fullFileExtension',
-  'hasAugmentedPermissions',
-  'hasThumbnail',
-  'headRevisionId',
-  'iconLink',
-  'id',
-  'imageMediaMetadata',
-  'isAppAuthorized',
-  'lastModifyingUser',
-  'md5Checksum',
-  'mimeType',
-  'modifiedByMe',
-  'modifiedByMeTime',
-  'modifiedTime',
-  'name',
-  'originalFilename',
-  'ownedByMe',
-  'owners',
-  'parents',
-  'properties',
-  'quotaBytesUsed',
-  'shared',
-  'sharedWithMeTime',
-  'sharingUser',
-  'size',
-  'spaces',
-  'starred',
-  'teamDriveId',
-  'thumbnailLink',
-  'thumbnailVersion',
-  'trashed',
-  'trashedTime',
-  'trashingUser',
-  'version',
-  'videoMediaMetadata',
-  'viewedByMe',
-  'viewedByMeTime',
-  'viewersCanCopyContent',
-  'webContentLink',
-  'webViewLink',
-  'writersCanShare',
-];
-
-export interface Schema$File$Modded extends Schema$File {
-  isDeleted: boolean;
-  isFolder: boolean;
-  parentFolder?: string;
-}
-
-export interface UploadOptionsBasic {
-  create?: boolean;
-  replace?: boolean;
-}
-
-export interface UploadOptions extends UploadOptionsBasic {
-  compress?: string | boolean;
-}
+import {
+  allFileTypes,
+  FieldsType,
+  Params$Resource$Files$Create,
+  Params$Resource$Files$Get,
+  Params$Resource$Files$List,
+  Schema$File,
+  Schema$File$Modded,
+  UploadOptions,
+  UploadOptionsBasic,
+} from './types';
 
 export class GDrive {
   public readonly DEFAULT_FIELDS: FieldsType[] = [
@@ -193,7 +82,7 @@ export class GDrive {
     return this.getListFiles(info);
   }
 
-  async getFile(fileId?: string): Promise<Schema$File> {
+  async getFile(fileId?: string | null): Promise<Schema$File> {
     await this.initiated;
     if (!fileId) {
       return Promise.reject(this.genericError(new Error('File id not found')));
@@ -211,12 +100,14 @@ export class GDrive {
 
   async deleteFile(file: Schema$File$Modded): Promise<void> {
     await this.initiated;
-    return this.drive.files.delete({ fileId: file.id })
-        .then(({ data }) => {
-          console.warn(`${Config.TAG} Deleted ${file.isFolder ? 'folder' : 'file'}: ${file.name}`);
-          return data;
-        })
-        .catch(this.genericError);
+    if (file.id) {
+      return this.drive.files.delete({ fileId: file.id })
+          .then(({ data }) => {
+            console.warn(`${Config.TAG} Deleted ${file.isFolder ? 'folder' : 'file'}: ${file.name}`);
+            return data;
+          })
+          .catch(this.genericError);
+    }
   }
 
   async uploadFile(
@@ -351,7 +242,7 @@ export class GDrive {
   private async getUploadFolderId(
       folderName: string | boolean,
       create: boolean,
-      requestBody: drive_v3.Schema$File,
+      requestBody: Schema$File,
   ) {
     let folderId = '';
     if (folderName && typeof folderName === 'string') {
@@ -376,7 +267,7 @@ export class GDrive {
           .map((file) => {
             return {
               ...file,
-              toDelete: moment(file.createdTime)
+              toDelete: moment(file.createdTime || undefined)
                   .isSameOrBefore(moment().subtract(+time, granularity as moment.unitOfTime.DurationConstructor)),
             };
           })
