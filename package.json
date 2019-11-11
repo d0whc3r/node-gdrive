@@ -69,7 +69,7 @@
     "core-js": "3.4.0",
     "coveralls": "3.0.7",
     "dotenv-cli": "3.0.0",
-    "dts-bundle-generator": "3.3.0",
+    "dts-bundle-generator": "3.3.1",
     "google-auth-library": "5.5.1",
     "jest": "24.9.0",
     "jest-junit": "9.0.0",
