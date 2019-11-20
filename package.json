@@ -68,7 +68,7 @@
     "codecov": "3.6.1",
     "core-js": "3.4.0",
     "coveralls": "3.0.7",
-    "dotenv-cli": "3.0.0",
+    "dotenv-cli": "3.1.0",
     "dts-bundle-generator": "3.3.0",
     "google-auth-library": "5.5.1",
     "jest": "24.9.0",
