@@ -76,7 +76,7 @@
     "jest-sonar-reporter": "2.0.0",
     "jest-transform-stub": "2.0.0",
     "mock-stdin": "0.3.1",
-    "nock": "11.7.0",
+    "nock": "11.9.1",
     "regenerator-runtime": "0.13.3",
     "rimraf": "3.0.0",
     "rollup": "1.26.4",
