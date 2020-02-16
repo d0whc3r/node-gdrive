@@ -62,7 +62,7 @@
     "@types/jest": "24.0.22",
     "@types/mime-types": "2.1.0",
     "@types/nock": "11.1.0",
-    "@types/node": "12.12.7",
+    "@types/node": "12.12.27",
     "builtin-modules": "3.1.0",
     "codacy-coverage": "3.4.0",
     "codecov": "3.6.1",
