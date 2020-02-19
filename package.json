@@ -65,7 +65,7 @@
     "@types/node": "12.12.7",
     "builtin-modules": "3.1.0",
     "codacy-coverage": "3.4.0",
-    "codecov": "3.6.1",
+    "codecov": "3.6.5",
     "core-js": "3.4.0",
     "coveralls": "3.0.7",
     "dotenv-cli": "3.0.0",
