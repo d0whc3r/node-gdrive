@@ -39,7 +39,7 @@ Then you could execute a simple command to generate token.json:
 > Be careful to copy `credentials.json` into `$PWD/secrets` path
 
 ```bash
-docker run --rm -v $PWD/secrets:/app/secrets/ d0whc3r/gdrive -l
+docker run --rm -it -v $PWD/secrets:/app/secrets/ d0whc3r/gdrive -l
 ```
 
 ### :pencil: Using downloaded project
@@ -86,7 +86,7 @@ docker run --rm gdrive --help
 To make docker image work properly you need to indicate where credentials and token are located
 
 ```bash
-docker run --rm -it -v $PWD/secrets:/app/secrets:ro gdrive -l
+docker run --rm -v $PWD/secrets:/app/secrets:ro gdrive -l
 ```
 
 ## :checkered_flag: Cli help output
