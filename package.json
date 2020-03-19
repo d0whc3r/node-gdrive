@@ -67,7 +67,7 @@
     "codacy-coverage": "3.4.0",
     "codecov": "3.6.5",
     "core-js": "3.6.4",
-    "coveralls": "3.0.9",
+    "coveralls": "3.0.11",
     "dotenv-cli": "3.1.0",
     "dts-bundle-generator": "3.3.1",
     "google-auth-library": "5.10.1",
