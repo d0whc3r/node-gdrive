@@ -70,7 +70,7 @@
     "coveralls": "3.0.9",
     "dotenv-cli": "3.1.0",
     "dts-bundle-generator": "3.3.1",
-    "google-auth-library": "5.10.1",
+    "google-auth-library": "6.0.0",
     "jest": "25.1.0",
     "jest-junit": "10.0.0",
     "jest-sonar-reporter": "2.0.0",
