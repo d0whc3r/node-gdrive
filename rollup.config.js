@@ -35,7 +35,7 @@ const plugins = {
   builtins: builtins(),
   typescript: typescript({
     useTsconfigDeclarationDir: false,
-    objectHashIgnoreUnknownHack: true,
+    // objectHashIgnoreUnknownHack: true,
   }),
   babel: babel({
     exclude: [/\/core-js\//, /\/node_modules\//],
