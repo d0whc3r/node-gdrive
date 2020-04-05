@@ -1,4 +1,3 @@
-
 # :floppy_disk: Node gdrive
 
 Utility to manipulate google drive using nodejs. It could upload content to google drive and it could be used as backup service.
@@ -7,6 +6,7 @@ Utility to manipulate google drive using nodejs. It could upload content to goog
 
 [![pipeline status](https://gitlab.com/d0whc3r/node-gdrive/badges/master/pipeline.svg)](https://github.com/d0whc3r/node-gdrive)
 [![codecov](https://codecov.io/gh/d0whc3r/node-gdrive/branch/master/graph/badge.svg)](https://codecov.io/gh/d0whc3r/node-gdrive)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fd0whc3r%2Fnode-gdrive.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fd0whc3r%2Fnode-gdrive?ref=badge_shield)
 
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/2612116bab5f493cada70bffc3cb6492)](https://www.codacy.com/app/d0whc3r/node-gdrive?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=d0whc3r/node-gdrive&amp;utm_campaign=Badge_Grade)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=d0whc3r_node-gdrive&metric=alert_status)](https://sonarcloud.io/dashboard?id=d0whc3r_node-gdrive)
@@ -130,3 +130,7 @@ Examples
   7. Delete files in "uploads" folder older than 1minute                              $ gdrive -f uploads -d 1m                                     
   8. Generate mysql dump file zip it and upload to "mysql-backup" folder              $ gdrive -f mysql-backup -m -z   
 ```
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fd0whc3r%2Fnode-gdrive.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fd0whc3r%2Fnode-gdrive?ref=badge_large)
