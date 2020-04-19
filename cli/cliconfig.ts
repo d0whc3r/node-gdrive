@@ -85,7 +85,7 @@ export interface GDriveOptions extends CommandLineOptions {
   mysql?: boolean;
 }
 
-let options: GDriveOptions = {} as GDriveOptions;
+let options: GDriveOptions = {};
 try {
   options = commandLineArgs(optionDefinitions);
 } catch (e) {
@@ -120,11 +120,11 @@ if (options.help || !Object.keys(options).length) {
           example: `$ ${ex} -b src/* -b images/* -f backup`,
         },
         {
-          desc: '4. Backup files using wildcard and zip into "zipped" folder folder will be created if it doesn\'t exists.',
+          desc: '4. Backup files using wildcard and zip into "zipped" folder, folder will be created if it doesn\'t exists.',
           example: `$ ${ex} -b src/* -b images/* -z -f zipped.zip -c`,
         },
         {
-          desc: '5. Backup files using wildcard and zip using "allfiles.zip" as filename into "zipped" folder folder will be created if it doesn\'t exists and zipfile will be replaced if it exists',
+          desc: '5. Backup files using wildcard and zip using "allfiles.zip" as filename into "zipped" folder, folder will be created if it doesn\'t exists and zipfile will be replaced if it exists',
           example: `$ ${ex} -b src/* -b images/* -z allfiles.zip -f zipped -c -r`,
         },
         {
@@ -143,7 +143,7 @@ if (options.help || !Object.keys(options).length) {
     },
   ];
   console.info(commandLineUsage(sections));
-  process.exit(1);
+  process.exit(0);
 }
 
 export { options };

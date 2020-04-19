@@ -19,6 +19,8 @@ import {
   UploadOptions,
   UploadOptionsBasic,
 } from './types';
+import * as os from 'os';
+import { ReadStream } from "fs";
 
 export class GDrive {
   public readonly DEFAULT_FIELDS: FieldsType[] = [
@@ -136,10 +138,11 @@ export class GDrive {
       return Promise.reject(err);
     }
 
+    const readStream = fs.createReadStream(file);
     const createOptions: Params$Resource$Files$Create = {
       requestBody,
       media: {
-        body: fs.createReadStream(file),
+        body: readStream,
       },
       fields: `kind, ${this.DEFAULT_FIELDS.join(', ')}`,
     };
@@ -153,7 +156,10 @@ export class GDrive {
     };
     return this.drive.files.create(createOptions, { onUploadProgress })
         .then(({ data }) => this.parseFileMeta(data))
-        .catch(this.genericError);
+        .catch(this.genericError)
+        .finally(() => {
+          readStream.destroy();
+        });
   }
 
   async uploadFiles(
@@ -340,28 +346,32 @@ export class GDrive {
 
   private compressFiles(files: string[], outputName: string): Promise<string> {
     return new Promise((resolve, reject) => {
-      const fileDest = path.resolve('files', outputName);
+      const folder = os.tmpdir();
+      const fileDest = path.resolve(folder, outputName);
       FileUtils.mkdirp(path.dirname(fileDest));
       const output = fs.createWriteStream(fileDest);
+      const readStreams: ReadStream[] = [];
       const archive = archiver('zip', {
-        zlib: { level: 9 },
+        zlib: { level: 9 }
       });
-      output.on('close', function() {
+      output.on('close', () => {
         resolve(fileDest);
+        output.destroy();
       });
 
-      output.on('end', function() {
+      output.on('end', () => {
         resolve(fileDest);
+        output.destroy();
       });
 
-      archive.on('warning', function(err) {
+      archive.on('warning', (err) => {
         console.warn(`${Config.TAG} Warning compressing file`, err);
         if (err.code !== 'ENOENT') {
           reject(err);
         }
       });
 
-      archive.on('error', function(err) {
+      archive.on('error', (err) => {
         console.error(`${Config.TAG} Error compressing file`);
         reject(err);
       });
@@ -374,11 +384,17 @@ export class GDrive {
           archive.directory(file, false);
         } else {
           const name = path.basename(file);
-          archive.append(fs.createReadStream(file), { name });
+          const readStream = fs.createReadStream(file);
+          archive.append(readStream, { name });
+          readStreams.push(readStream);
         }
       });
 
-      archive.finalize();
+      archive.finalize().finally(() => {
+        readStreams.forEach((r) => {
+          r.destroy()
+        });
+      });
     });
   }
 }
