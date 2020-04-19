@@ -118,7 +118,7 @@ export class GDrive {
     await this.initiated;
     const { create, replace } = options || {} as any;
     const name = path.basename(file);
-    const mimeType = mime.contentType(file) || undefined;
+    const mimeType = mime.contentType(name) || undefined;
     const requestBody: Schema$File = {
       name,
       mimeType,
