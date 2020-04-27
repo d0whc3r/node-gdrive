@@ -11,44 +11,42 @@ import colors from 'colors';
 
 const theme = {
   folder: 'cyan',
-  error: 'red',
+  error: 'red'
 };
 
 colors.setTheme(theme);
 
 export class Cli {
-  constructor(
-      private opts = options,
-      private gdrive = new GDrive()) {
-  }
+  constructor(private opts = options, private gdrive = new GDrive()) {}
 
   async parseOptions() {
     for (const command in this.opts) {
-      const args = this.opts[command];
-      const zip = this.opts['zip'];
-      const folder = this.opts['folder'];
-      const replace = this.opts['replace'];
-      const create = this.opts['create'];
-      switch (command) {
-        case 'backup':
-          await this.backup(args, { zip, folder, replace, create });
-          break;
-        case 'delete':
-          await this.delete(args, folder);
-          break;
-        case 'mysql':
-          await this.dumpMysql({ zip, folder, replace, create });
-          break;
-        case 'list':
-          await this.showList();
-          break;
+      if (Object.prototype.hasOwnProperty.call(this.opts, command)) {
+        const args = this.opts[command];
+        const zip = this.opts['zip'];
+        const folder = this.opts['folder'];
+        const replace = this.opts['replace'];
+        const create = this.opts['create'];
+        switch (command) {
+          case 'backup':
+            await this.backup(args, { zip, folder, replace, create });
+            break;
+          case 'delete':
+            await this.delete(args, folder);
+            break;
+          case 'mysql':
+            await this.dumpMysql({ zip, folder, replace, create });
+            break;
+          case 'list':
+            await this.showList();
+            break;
+        }
       }
     }
   }
 
   async showList() {
-    const files = (await this.gdrive.listFiles())
-        .filter((file) => !file.isDeleted);
+    const files = (await this.gdrive.listFiles()).filter((file) => !file.isDeleted);
     if (files.length) {
       console.info(`${Config.TAG} File list: ${files.length}`);
       this.beautifulFiles(files);
@@ -61,40 +59,39 @@ export class Cli {
     if (!Array.isArray(args)) {
       args = [args];
     }
-    const parsed = args.map(this.parseDelete).map((arg) => {
-      if (!arg.folder) {
-        arg.folder = folder || null;
-      }
-      return {
-        ...arg,
-      };
-    });
+    const parsed = args
+      .map((x) => this.parseDelete(x))
+      .map((arg) => {
+        if (!arg.folder) {
+          arg.folder = folder || null;
+        }
+        return {
+          ...arg
+        };
+      });
     try {
       for (const info of parsed) {
-        const { folder, timeSpace } = info;
-        await this.gdrive.cleanOlder(timeSpace, folder || undefined);
+        const { folder: folderName, timeSpace } = info;
+        await this.gdrive.cleanOlder(timeSpace, folderName || undefined);
       }
-    } catch (e) {
+    } catch (_e) {
       console.error(`${Config.TAG} Error in delete files`);
     }
   }
 
-  async backup(
-      files: string | string[],
-      options: { zip?: string, folder?: string, replace?: boolean, create?: boolean },
-  ) {
-    const { zip, folder, replace, create } = options;
+  async backup(files: string | string[], opts: { zip?: string; folder?: string; replace?: boolean; create?: boolean }) {
+    const { zip, folder, replace, create } = opts;
     if (!Array.isArray(files)) {
       files = [files];
     }
     await this.gdrive.uploadFiles(files, folder || false, {
       compress: zip || zip === null,
       replace,
-      create,
+      create
     });
   }
 
-  async dumpMysql(options: { zip?: string, folder?: string, replace?: boolean, create?: boolean }) {
+  async dumpMysql(opts: { zip?: string; folder?: string; replace?: boolean; create?: boolean }) {
     let mysqlfile = '';
     try {
       mysqlfile = await this.createDumpFile();
@@ -103,7 +100,7 @@ export class Cli {
       console.error(colors.bold[theme.error](`${Config.TAG} Error mysql ${err}`));
       process.exit(-1);
     }
-    await this.backup(mysqlfile, options);
+    await this.backup(mysqlfile, opts);
   }
 
   private parseDelete(arg: string) {
@@ -119,7 +116,7 @@ export class Cli {
     }
     return {
       folder,
-      timeSpace,
+      timeSpace
     };
   }
 
@@ -137,12 +134,12 @@ export class Cli {
       const fileId = file && file.parents && file.parents[0];
       return {
         ...file,
-        parentFolder: this.findFile(files, fileId),
+        parentFolder: this.findFile(files, fileId)
       } as Schema$File$Modded;
     });
-    parsed.sort(this.sortByName);
-    parsed.sort(this.sortByParent);
-    parsed.sort(this.sortByFolder);
+    parsed.sort((a, b) => this.sortByName(a, b));
+    parsed.sort((a, b) => this.sortByParent(a, b));
+    parsed.sort((a, b) => this.sortByFolder(a, b));
     parsed.forEach((file) => {
       const fileName = file.isFolder ? this.showFolder(file.name) : file.name;
       const parent = file.parentFolder ? this.showFolder(`${file.parentFolder}/`) : '';
@@ -201,14 +198,14 @@ export class Cli {
         port,
         user,
         password,
-        database,
-      },
+        database
+      }
     }).then(({ dump }) => {
       const fileDest = `./files/mysqldump-${moment().format('YYYY-MM-DD.HHmmss')}.sql`;
       FileUtils.mkdirp(path.dirname(fileDest));
       const content = Object.values(dump)
-          .map((result) => result && result.replace(/^# /gm, '-- '))
-          .join('\n\n');
+        .map((result) => result && result.replace(/^# /gm, '-- '))
+        .join('\n\n');
       fs.writeFileSync(fileDest, content);
       return fileDest;
     });

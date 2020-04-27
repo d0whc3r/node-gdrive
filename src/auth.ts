@@ -12,7 +12,7 @@ export default class Auth {
     'https://www.googleapis.com/auth/drive',
     'https://www.googleapis.com/auth/drive.file', // File create/open
     'https://www.googleapis.com/auth/drive.metadata',
-    'https://www.googleapis.com/auth/drive.metadata.readonly', // file metadata (readonly)
+    'https://www.googleapis.com/auth/drive.metadata.readonly' // file metadata (readonly)
   ];
   private readonly TOKEN_FILE = Config.TOKEN_FILE;
   private readonly CREDENTIALS_FILE = Config.CREDENTIALS_FILE;
@@ -60,13 +60,12 @@ export default class Auth {
     return new Promise((resolve, reject) => {
       const authUrl = this.oAuth2Client(false).generateAuthUrl({
         access_type: 'offline',
-        scope: this.SCOPES,
+        scope: this.SCOPES
       });
-      // tslint:disable-next-line:no-console
       console.log(`${Config.TAG} Authorize this app by visiting this url:`, authUrl);
       const rl = readline.createInterface({
         input: process.stdin,
-        output: process.stdout,
+        output: process.stdout
       });
       rl.question(`${Config.TAG} Enter the code from that page here: `, (code) => {
         rl.close();
@@ -76,26 +75,26 @@ export default class Auth {
   }
 
   private oAuthGetToken(code: string, promise: PromiseConstructor) {
-    this.oAuth2Client(false).getToken(code)
-        .then(({ tokens }: GetTokenResponse) => {
-          this.oAuth2Client(false).setCredentials(tokens);
-          this.writeToken(tokens, promise);
-        })
-        .catch((err: Error) => {
-          console.error(colors.bold(`${Config.TAG} Error retrieving access token`).red, err.message);
-          return promise.reject(err);
-        });
+    this.oAuth2Client(false)
+      .getToken(code)
+      .then(({ tokens }: GetTokenResponse) => {
+        this.oAuth2Client(false).setCredentials(tokens);
+        this.writeToken(tokens, promise);
+      })
+      .catch((err: Error) => {
+        console.error(colors.bold(`${Config.TAG} Error retrieving access token`).red, err.message);
+        return promise.reject(err);
+      });
   }
 
   private writeToken(token: Credentials, { resolve, reject }: PromiseConstructor): void {
     fs.writeFile(this.TOKEN_FILE, JSON.stringify(token), (err) => {
       if (err) {
         console.error(err);
-        return reject(err);
+        reject(err);
       } else {
-        // tslint:disable-next-line:no-console
         console.log(`${Config.TAG} Token stored to`, this.TOKEN_FILE);
-        return resolve(true);
+        resolve(true);
       }
     });
   }
