@@ -39,6 +39,8 @@
   ],
   "include": [
     "./src/**/*.ts",
-    "./cli/**/*.ts"
+    "./cli/**/*.ts",
+    "./tests/**/*.ts",
+    "./types"
   ]
 }

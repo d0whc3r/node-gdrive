@@ -1,0 +1,7 @@
+node_modules
+dist
+bin
+.sonar
+.rpt2_cache
+.sass-cache
+*.d.ts
