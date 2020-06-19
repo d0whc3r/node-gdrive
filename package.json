@@ -47,7 +47,7 @@
     "build": "yarn build:base && yarn build:pkg",
     "build:windows": "yarn build:base && yarn build:pkg:windows",
     "build:macos": "yarn build:base && yarn build:pkg:macos",
-    "test": "jest -i --verbose --colors",
+    "test": "jest -i --colors",
     "test:fakeci": "dotenv -e test.env -- yarn test",
     "test:coverage": "yarn test --coverage",
     "test:send-coverages": "yarn coverage:codecovs && yarn coverage:coveralls && yarn coverage:codacy",
@@ -67,7 +67,7 @@
     "glob": "7.1.6",
     "googleapis": "52.1.0",
     "mime-types": "2.1.27",
-    "moment": "2.26.0",
+    "moment": "2.27.0",
     "mysqldump": "3.2.0"
   },
   "devDependencies": {
@@ -117,7 +117,7 @@
     "pretty-quick": "2.0.1",
     "regenerator-runtime": "0.13.5",
     "rimraf": "3.0.2",
-    "rollup": "2.17.0",
+    "rollup": "2.17.1",
     "rollup-plugin-babel": "4.4.0",
     "rollup-plugin-node-builtins": "2.1.2",
     "rollup-plugin-node-globals": "1.4.0",

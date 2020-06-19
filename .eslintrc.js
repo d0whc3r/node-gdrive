@@ -42,7 +42,6 @@ module.exports = {
         '@typescript-eslint/func-call-spacing': 2,
 
         // tslint
-        '@typescript-eslint/class-name-casing': 2,
         '@typescript-eslint/explicit-member-accessibility': [
           0,
           {
