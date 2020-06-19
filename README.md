@@ -1,4 +1,3 @@
-
 # :floppy_disk: Node gdrive
 
 Utility to manipulate google drive using nodejs. It could upload content to google drive and it could be used as backup service.
@@ -21,6 +20,8 @@ Utility to manipulate google drive using nodejs. It could upload content to goog
 [![](https://img.shields.io/docker/cloud/build/d0whc3r/gdrive.svg)](https://hub.docker.com/r/d0whc3r/gdrive)
 [![](https://images.microbadger.com/badges/version/d0whc3r/gdrive.svg)](https://hub.docker.com/r/d0whc3r/gdrive)
 [![](https://images.microbadger.com/badges/image/d0whc3r/gdrive.svg)](https://hub.docker.com/r/d0whc3r/gdrive)
+
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fd0whc3r%2Fnode-gdrive.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fd0whc3r%2Fnode-gdrive?ref=badge_shield)
 
 ## :key: Create credentials and token files
 
@@ -130,3 +131,7 @@ Examples
   7. Delete files in "uploads" folder older than 1minute                              $ gdrive -f uploads -d 1m                                     
   8. Generate mysql dump file zip it and upload to "mysql-backup" folder              $ gdrive -f mysql-backup -m -z   
 ```
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fd0whc3r%2Fnode-gdrive.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fd0whc3r%2Fnode-gdrive?ref=badge_large)
