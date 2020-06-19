@@ -1,4 +1,6 @@
-FROM node:10 AS builder
+FROM node:12 AS builder
+
+ENV NODE_OPTIONS "--max_old_space_size=2048"
 
 COPY package.json yarn.lock tsconfig.json rollup.config.js /app/
 WORKDIR /app
@@ -8,15 +10,13 @@ COPY src/ /app/src
 COPY cli/ /app/cli
 RUN yarn build
 
-FROM node:10
+FROM bitnami/minideb
 
 ENV TOKEN_FILE=/app/secrets/token.json
 ENV CREDENTIALS_FILE=/app/secrets/credentials.json
 
-COPY package.json yarn.lock /app/
-COPY --from=builder /app/bin/cli.js /app/bin/cli.js
+COPY --from=builder /app/node-gdrive /app/node-gdrive
+RUN chmod +x /app/node-gdrive
 WORKDIR /app
 
-RUN yarn install --prod --pure-lockfile
-
-ENTRYPOINT ["node", "/app/bin/cli.js"]
+ENTRYPOINT ["/app/node-gdrive"]

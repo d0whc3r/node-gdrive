@@ -44,20 +44,20 @@ describe('Check credentials', () => {
       mockStdIn = stdin();
     });
 
-    it('Access token invalid', (done) => {
-      expect(auth).toBeDefined();
-      // expect(mockStdIn).toBeDefined();
-      nock('https://oauth2.googleapis.com')
-          .post('/token')
-          .reply(400, { error: 'mocked token' });
+    it(
+      'Access token invalid',
+      (done) => {
+        expect(auth).toBeDefined();
+        // expect(mockStdIn).toBeDefined();
+        nock('https://oauth2.googleapis.com').post('/token').reply(400, { error: 'mocked token' });
 
-      const resultPromise = auth.initiate();
-      setTimeout(() => {
-        // mockStdIn = stdin();
-        mockStdIn.send('1234567890TOKEN_MOCK\n');
-        mockStdIn.end();
-      }, 1500);
-      resultPromise
+        const resultPromise = auth.initiate();
+        setTimeout(() => {
+          // mockStdIn = stdin();
+          mockStdIn.send('1234567890TOKEN_MOCK\n');
+          mockStdIn.end();
+        }, 1500);
+        resultPromise
           .then(() => {
             fail('token should be invalid');
           })
@@ -67,22 +67,26 @@ describe('Check credentials', () => {
           .finally(() => {
             done();
           });
-    }, DEFAULT_TIMEOUT);
+      },
+      DEFAULT_TIMEOUT
+    );
 
-    it('Generate access token (mocked response)', (done) => {
-      expect(auth).toBeDefined();
-      // expect(mockStdIn).toBeDefined();
-      nock('https://oauth2.googleapis.com')
+    it(
+      'Generate access token (mocked response)',
+      (done) => {
+        expect(auth).toBeDefined();
+        // expect(mockStdIn).toBeDefined();
+        nock('https://oauth2.googleapis.com')
           .post('/token')
           .reply(200, JSON.parse(process.env.TOKEN_JSON || '{ "token": "mocked" }'));
 
-      const resultPromise = auth.initiate();
-      setTimeout(() => {
-        // mockStdIn = stdin();
-        mockStdIn.send('1234567890TOKEN_MOCK\n');
-        mockStdIn.end();
-      }, 1500);
-      resultPromise
+        const resultPromise = auth.initiate();
+        setTimeout(() => {
+          // mockStdIn = stdin();
+          mockStdIn.send('1234567890TOKEN_MOCK\n');
+          mockStdIn.end();
+        }, 1500);
+        resultPromise
           .then((data) => {
             expect(data).toBeDefined();
             expect(fs.existsSync(Config.TOKEN_FILE)).toBeTruthy();
@@ -93,7 +97,8 @@ describe('Check credentials', () => {
           .finally(() => {
             done();
           });
-    }, DEFAULT_TIMEOUT);
+      },
+      DEFAULT_TIMEOUT
+    );
   });
-
 });

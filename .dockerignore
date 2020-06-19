@@ -2,7 +2,6 @@ node_modules
 dist
 bin
 tests
-gdrive-*
 types
 secrets
 *.env

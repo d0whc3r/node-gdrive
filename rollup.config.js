@@ -1,123 +1,111 @@
-import babel from 'rollup-plugin-babel';
-import json from 'rollup-plugin-json';
-import builtins from 'rollup-plugin-node-builtins';
-import builtinModules from 'builtin-modules';
-import nodeResolve from 'rollup-plugin-node-resolve';
 import typescript from 'rollup-plugin-typescript2';
-import commonjs from 'rollup-plugin-commonjs';
+import commonjs from '@rollup/plugin-commonjs';
+import json from '@rollup/plugin-json';
+import nodeResolve from '@rollup/plugin-node-resolve';
 import { terser } from 'rollup-plugin-terser';
-import pkg from './package.json';
+import findNodeModules from 'find-node-modules';
+import builtinModules from 'builtin-modules';
+import pkgJson from './package.json';
+import fs from 'fs';
+import path from 'path';
 
-function parseName(name) {
-  return name
-      .replace('@', '')
-      .replace('/', '-')
-      .split('-')
-      .map((x, i) => (i > 0 ? x[0].toUpperCase() + x.slice(1) : x))
-      .join('');
-}
+let CHECKED_DEPS = [];
 
-const extensions = ['.ts', '.js', '.mjs'];
-const resolveOptions = {
-  mainFields: ['collection:main', 'jsnext:main', 'es2017', 'es2015', 'module', 'main'],
-  preferBuiltins: true,
-  extensions,
-  modulesOnly: true,
-  browser: true,
-};
-const plugins = {
-  json: json({
-    exclude: 'node_modules/**',
-    preferConst: true,
-    indent: '  ',
-  }),
-  nodeResolve: nodeResolve(resolveOptions),
-  builtins: builtins(),
-  typescript: typescript({
-    useTsconfigDeclarationDir: false,
-    objectHashIgnoreUnknownHack: true,
-  }),
-  babel: babel({
-    exclude: [/\/core-js\//, /\/node_modules\//],
-    plugins: [
-      [
-        '@babel/plugin-transform-regenerator',
-        {
-          asyncGenerators: true,
-          generators: true,
-          async: true
-        }
-      ],
-      ['@babel/plugin-syntax-import-meta']
-    ],
-    presets: [
-      [
-        '@babel/env',
-        {
-          targets: {
-            browsers: '> 1%, IE 11, not dead'
-          },
-          useBuiltIns: 'usage',
-          corejs: 3
-        }
-      ]
-    ],
-    extensions
-  }),
-  commonjs: commonjs(),
-};
-
-function rollupConfig(pkg, options = {}) {
-  const output = [
-    { file: pkg.main, format: 'cjs', sourcemap: false },
-    { file: pkg.module, format: 'es', sourcemap: false }];
-  const outputMin = [];
-  if (pkg.iife) {
-    outputMin.push({ file: pkg.iife, name: parseName(pkg.name), format: 'iife', sourcemap: true });
-  }
-  if (pkg.umd) {
-    outputMin.push({ file: pkg.umd, name: parseName(pkg.name), format: 'umd', sourcemap: true });
-  }
-
-  const baseBuild = {
-    input: 'src/index.ts',
-    output,
-    treeshake: true,
-    plugins: [...Object.values(plugins), terser()],
-    external: [...Object.keys(pkg.dependencies || {}), ...Object.keys(pkg.peerDependencies || {}), ...builtinModules]
+export default function odpRollupConfig(options) {
+  const extensions = ['.ts', '.js', '.mjs'];
+  const resolveOptions = {
+    mainFields: ['jsnext:main', 'es2017', 'es2015', 'module', 'main'],
+    preferBuiltins: true,
+    extensions,
+    modulesOnly: true,
+    browser: true
   };
-
-  const buildSrc = {
-    ...baseBuild,
-  };
-  const buildCli = {
-    ...baseBuild,
-    input: 'cli/cli.ts',
-    output: { file: 'bin/cli.js', format: 'cjs', sourcemap: false },
-  };
-
-  const result = [
-    {
-      ...buildSrc,
-      ...options,
-    },
-    {
-      ...buildCli,
-      ...options,
-    },
+  const plugins = [
+    json({
+      exclude: 'node_modules/**',
+      preferConst: true,
+      compact: true,
+      namedExports: true,
+      indent: '  '
+    }),
+    nodeResolve(resolveOptions),
+    typescript({
+      useTsconfigDeclarationDir: false,
+      tsconfigOverride: {
+        compilerOptions: { module: 'esnext' }
+      }
+    }),
+    commonjs(),
+    terser()
   ];
 
-  if (outputMin.length) {
-    result.push({
-      ...baseBuild,
-      external: [],
-      output: outputMin,
-      plugins: [...Object.values(plugins), terser()],
-      ...options,
-    });
+  function getContent(dir) {
+    return JSON.parse(fs.readFileSync(dir, 'utf8'));
   }
 
-  return result;
-}
+  function getDependencies(pkg) {
+    return [...Object.keys(pkg.dependencies || {}), ...Object.keys(pkg.peerDependencies || {})];
+  }
 
-export default rollupConfig(pkg);
+  function getAllDependencies(dep) {
+    let result = [];
+    findNodeModules()
+      .map((dir) => path.resolve(process.cwd(), dir))
+      .forEach((dir) => {
+        const depPkg = path.join(dir, dep, 'package.json');
+        if (fs.existsSync(depPkg)) {
+          const content = getContent(depPkg);
+          const deps = getDependencies(content);
+          deps.forEach((d) => {
+            if (!CHECKED_DEPS.includes(d)) {
+              CHECKED_DEPS = [...CHECKED_DEPS, d];
+              result = [...result, ...getAllDependencies(d)];
+            }
+          });
+          result = [...result, ...deps];
+        }
+      });
+    return result;
+  }
+
+  function filterDependencies(pkg, deps) {
+    const { devDependencies } = pkg;
+    let result = [...deps];
+    if (devDependencies) {
+      result = result.filter((d) => !Object.keys(devDependencies).includes(d));
+    }
+    return result.filter((dep, index, array) => array.indexOf(dep) === index);
+  }
+
+  function getRecursiveDependencies(pkg) {
+    const deps = getDependencies(pkg);
+    let result = [...deps];
+    deps.forEach((dep) => {
+      CHECKED_DEPS = [...CHECKED_DEPS, dep];
+      result = [...result, ...getAllDependencies(dep)];
+    });
+    return filterDependencies(pkg, result);
+  }
+
+  const external = [...getRecursiveDependencies(pkgJson), ...builtinModules];
+  const outputConfig = { sourcemap: false, globals: {} };
+  const output = {
+    input: 'src/index.ts',
+    treeshake: true,
+    output: [
+      { ...outputConfig, file: pkgJson.main, format: 'cjs' },
+      { ...outputConfig, file: pkgJson.module, format: 'es' }
+    ],
+    plugins,
+    external,
+    ...options
+  };
+  return [
+    output,
+    {
+      ...output,
+      input: 'cli/cli.ts',
+      output: [{ ...outputConfig, file: 'bin/cli.js', format: 'cjs', banner: '#!/usr/bin/env node' }]
+    }
+  ];
+}

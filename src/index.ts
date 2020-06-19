@@ -1,7 +1,7 @@
-import { google } from 'googleapis';
-import * as fs from 'fs';
+import { drive_v3, google } from 'googleapis';
+import fs, { ReadStream } from 'fs';
 import mime from 'mime-types';
-import * as path from 'path';
+import path from 'path';
 import Config from './config';
 import archiver from 'archiver';
 import FileUtils from './file.utils';
@@ -14,22 +14,15 @@ import {
   Params$Resource$Files$Create,
   Params$Resource$Files$Get,
   Params$Resource$Files$List,
-  Schema$File,
   Schema$File$Modded,
   UploadOptions,
-  UploadOptionsBasic,
+  UploadOptionsBasic
 } from './types';
+import os from 'os';
+import Schema$File = drive_v3.Schema$File;
 
 export class GDrive {
-  public readonly DEFAULT_FIELDS: FieldsType[] = [
-    'createdTime',
-    'id',
-    'md5Checksum',
-    'mimeType',
-    'name',
-    'parents',
-    'trashed',
-  ];
+  public readonly DEFAULT_FIELDS: FieldsType[] = ['createdTime', 'id', 'md5Checksum', 'mimeType', 'name', 'parents', 'trashed'];
   private readonly gdriveAuth: Auth;
   private readonly initiated: Promise<boolean | Error>;
   private readonly MIME_FOLDER = 'application/vnd.google-apps.folder';
@@ -53,14 +46,14 @@ export class GDrive {
   }
 
   public isFolder(file: Schema$File) {
-    if (file.hasOwnProperty('mimeType')) {
+    if (Object.prototype.hasOwnProperty.call(file, 'mimeType')) {
       return file.mimeType === this.MIME_FOLDER;
     }
     return undefined;
   }
 
   public isDeleted(file: Schema$File): boolean {
-    if (file.hasOwnProperty('trashed')) {
+    if (Object.prototype.hasOwnProperty.call(file, 'trashed')) {
       return !!file.trashed;
     }
     return false;
@@ -77,7 +70,7 @@ export class GDrive {
       pageSize,
       fields: `kind, nextPageToken, incompleteSearch, files(${fields.join(', ')})`,
       prettyPrint: true,
-      includeTeamDriveItems: false,
+      includeTeamDriveItems: false
     };
     return this.getListFiles(info);
   }
@@ -88,9 +81,10 @@ export class GDrive {
       return Promise.reject(this.genericError(new Error('File id not found')));
     }
     const info: Params$Resource$Files$Get = { fileId };
-    return this.drive.files.get(info)
-        .then(({ data }) => data)
-        .catch(this.genericError);
+    return this.drive.files
+      .get(info)
+      .then(({ data }) => data)
+      .catch((e) => this.genericError(e));
   }
 
   async emptyTrash() {
@@ -101,27 +95,24 @@ export class GDrive {
   async deleteFile(file: Schema$File$Modded): Promise<void> {
     await this.initiated;
     if (file.id) {
-      return this.drive.files.delete({ fileId: file.id })
-          .then(({ data }) => {
-            console.warn(`${Config.TAG} Deleted ${file.isFolder ? 'folder' : 'file'}: ${file.name}`);
-            return data;
-          })
-          .catch(this.genericError);
+      return this.drive.files
+        .delete({ fileId: file.id })
+        .then(({ data }) => {
+          console.warn(`${Config.TAG} Deleted ${file.isFolder ? 'folder' : 'file'}: ${file.name}`);
+          return data;
+        })
+        .catch((e) => this.genericError(e));
     }
   }
 
-  async uploadFile(
-      file: string,
-      folderName?: string | boolean,
-      options?: UploadOptionsBasic,
-  ): Promise<Schema$File$Modded> {
+  async uploadFile(file: string, folderName?: string | boolean, options?: UploadOptionsBasic): Promise<Schema$File$Modded> {
     await this.initiated;
-    const { create, replace } = options || {} as any;
+    const { create, replace } = options || ({} as any);
     const name = path.basename(file);
-    const mimeType = mime.contentType(file) || undefined;
+    const mimeType = mime.contentType(name) || undefined;
     const requestBody: Schema$File = {
       name,
-      mimeType,
+      mimeType
     };
     let folderId = null;
     try {
@@ -136,12 +127,13 @@ export class GDrive {
       return Promise.reject(err);
     }
 
+    const readStream = fs.createReadStream(file);
     const createOptions: Params$Resource$Files$Create = {
       requestBody,
       media: {
-        body: fs.createReadStream(file),
+        body: readStream
       },
-      fields: `kind, ${this.DEFAULT_FIELDS.join(', ')}`,
+      fields: `kind, ${this.DEFAULT_FIELDS.join(', ')}`
     };
 
     const fileSize = fs.statSync(file).size;
@@ -151,15 +143,19 @@ export class GDrive {
         console.warn(`${Config.TAG} Upload ${name}: ${Math.round(progress)}% complete`);
       }
     };
-    return this.drive.files.create(createOptions, { onUploadProgress })
-        .then(({ data }) => this.parseFileMeta(data))
-        .catch(this.genericError);
+    return this.drive.files
+      .create(createOptions, { onUploadProgress })
+      .then(({ data }) => this.parseFileMeta(data))
+      .catch((e) => this.genericError(e))
+      .finally(() => {
+        readStream.destroy();
+      });
   }
 
   async uploadFiles(
-      files: string | string[],
-      folderName?: string | boolean,
-      options: UploadOptions = {},
+    files: string | string[],
+    folderName?: string | boolean,
+    options: UploadOptions = {}
   ): Promise<{ [filename: string]: Schema$File$Modded }> {
     await this.initiated;
     const { compress, replace, create } = options;
@@ -192,7 +188,7 @@ export class GDrive {
   }
 
   async cleanOlder(timeSpace: string, folderName?: string): Promise<void> {
-    const match = timeSpace.match(/([0-9]+)(\w+)/);
+    const match = /([0-9]+)(\w+)/.exec(timeSpace);
     if (!match) {
       console.error(`${Config.TAG} Unknown timesSpace "${timeSpace}"`);
       return Promise.reject(false);
@@ -211,18 +207,19 @@ export class GDrive {
   }
 
   private getListFiles(info: Params$Resource$Files$List, files: Schema$File[] = []): Promise<Schema$File$Modded[]> {
-    return this.drive.files.list(info)
-        .then(async ({ data }) => {
-          files = files.concat(data.files as Schema$File[]);
-          if (data.nextPageToken) {
-            info.pageToken = data.nextPageToken;
-            return this.getListFiles(info, files);
-          } else {
-            return files;
-          }
-        })
-        .then((allFiles) => this.parseFilesMeta(allFiles))
-        .catch(this.genericError);
+    return this.drive.files
+      .list(info)
+      .then(async ({ data }) => {
+        files = files.concat(data.files as Schema$File[]);
+        if (data.nextPageToken) {
+          info.pageToken = data.nextPageToken;
+          return this.getListFiles(info, files);
+        } else {
+          return files;
+        }
+      })
+      .then((allFiles) => this.parseFilesMeta(allFiles))
+      .catch((e) => this.genericError(e));
   }
 
   private async replaceExistingFolder(replace: boolean, name: string, folderId: string) {
@@ -239,19 +236,14 @@ export class GDrive {
     }
   }
 
-  private async getUploadFolderId(
-      folderName: string | boolean,
-      create: boolean,
-      requestBody: Schema$File,
-  ) {
+  private async getUploadFolderId(folderName: string | boolean, create: boolean, requestBody: Schema$File) {
     let folderId = '';
     if (folderName && typeof folderName === 'string') {
       folderId = await this.findFolderId(folderName, create === undefined ? true : create);
       if (folderId) {
         requestBody.parents = [folderId];
       } else {
-        return Promise.reject(
-            new Error(`${Config.TAG} Folder "${folderName}" does not exists and will not be created`));
+        return Promise.reject(new Error(`${Config.TAG} Folder "${folderName}" does not exists and will not be created`));
       }
     }
     return Promise.resolve(folderId);
@@ -262,16 +254,17 @@ export class GDrive {
     if (files && files.length) {
       const [, time, granularity] = match;
       const filtered = files
-          .filter((file) => !folderId || (folderId && !file.isFolder))
-          .filter((file) => !folderId || (folderId && file.parents && file.parents.includes(folderId)))
-          .map((file) => {
-            return {
-              ...file,
-              toDelete: moment(file.createdTime || undefined)
-                  .isSameOrBefore(moment().subtract(+time, granularity as moment.unitOfTime.DurationConstructor)),
-            };
-          })
-          .filter((file) => file.toDelete);
+        .filter((file) => !folderId || (folderId && !file.isFolder))
+        .filter((file) => !folderId || (folderId && file.parents && file.parents.includes(folderId)))
+        .map((file) => {
+          return {
+            ...file,
+            toDelete: moment(file.createdTime || undefined).isSameOrBefore(
+              moment().subtract(+time, granularity as moment.unitOfTime.DurationConstructor)
+            )
+          };
+        })
+        .filter((file) => file.toDelete);
       if (filtered && filtered.length) {
         for (const file of filtered) {
           await this.deleteFile(file);
@@ -284,7 +277,7 @@ export class GDrive {
     return {
       ...file,
       isDeleted: this.isDeleted(file),
-      isFolder: !!this.isFolder(file),
+      isFolder: !!this.isFolder(file)
     };
   }
 
@@ -299,10 +292,10 @@ export class GDrive {
 
   private async findFolderId(folderName: string, create = false): Promise<string> {
     const folder = (await this.listFiles())
-        .filter((file) => file.isFolder)
-        .filter((file) => !file.isDeleted)
-        .filter((file) => file.name === folderName)
-        .map((file) => file.id);
+      .filter((file) => file.isFolder)
+      .filter((file) => !file.isDeleted)
+      .filter((file) => file.name === folderName)
+      .map((file) => file.id);
     if (folder && folder.length) {
       return Promise.resolve(folder[0] || '');
     } else if (create) {
@@ -314,10 +307,10 @@ export class GDrive {
 
   private async findFile(fileName: string, folderId?: string) {
     const file = (await this.listFiles())
-        .filter((file) => !file.isFolder)
-        .filter((file) => !file.isDeleted)
-        .filter((file) => file.name === fileName)
-        .filter((file) => !folderId || file.parents && file.parents.some((folder) => folder === folderId));
+      .filter((f) => !f.isFolder)
+      .filter((f) => !f.isDeleted)
+      .filter((f) => f.name === fileName)
+      .filter((f) => !folderId || (f.parents && f.parents.some((folder) => folder === folderId)));
     if (file && file.length) {
       return file[0];
     }
@@ -325,43 +318,48 @@ export class GDrive {
   }
 
   private async createFolder(folderName: string): Promise<Schema$File> {
-    const createdFolder = await this.drive.files.create({
-      requestBody: {
-        name: folderName,
-        mimeType: this.MIME_FOLDER,
-      },
-      fields: 'id',
-    })
-        .then(({ data }) => data)
-        .catch(this.genericError);
+    const createdFolder = await this.drive.files
+      .create({
+        requestBody: {
+          name: folderName,
+          mimeType: this.MIME_FOLDER
+        },
+        fields: 'id'
+      })
+      .then(({ data }) => data)
+      .catch((e) => this.genericError(e));
     console.warn(`${Config.TAG} Created folder "${folderName}" with id: "${createdFolder.id}"`);
     return createdFolder;
   }
 
   private compressFiles(files: string[], outputName: string): Promise<string> {
     return new Promise((resolve, reject) => {
-      const fileDest = path.resolve('files', outputName);
+      const folder = os.tmpdir();
+      const fileDest = path.resolve(folder, outputName);
       FileUtils.mkdirp(path.dirname(fileDest));
       const output = fs.createWriteStream(fileDest);
+      const readStreams: ReadStream[] = [];
       const archive = archiver('zip', {
-        zlib: { level: 9 },
+        zlib: { level: 9 }
       });
-      output.on('close', function() {
+      output.on('close', () => {
         resolve(fileDest);
+        output.destroy();
       });
 
-      output.on('end', function() {
+      output.on('end', () => {
         resolve(fileDest);
+        output.destroy();
       });
 
-      archive.on('warning', function(err) {
+      archive.on('warning', (err) => {
         console.warn(`${Config.TAG} Warning compressing file`, err);
         if (err.code !== 'ENOENT') {
           reject(err);
         }
       });
 
-      archive.on('error', function(err) {
+      archive.on('error', (err) => {
         console.error(`${Config.TAG} Error compressing file`);
         reject(err);
       });
@@ -374,11 +372,17 @@ export class GDrive {
           archive.directory(file, false);
         } else {
           const name = path.basename(file);
-          archive.append(fs.createReadStream(file), { name });
+          const readStream = fs.createReadStream(file);
+          archive.append(readStream, { name });
+          readStreams.push(readStream);
         }
       });
 
-      archive.finalize();
+      archive.finalize().finally(() => {
+        readStreams.forEach((r) => {
+          r.destroy();
+        });
+      });
     });
   }
 }
