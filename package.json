@@ -95,7 +95,7 @@
     "core-js": "3.6.5",
     "coveralls": "3.1.0",
     "dotenv": "8.2.0",
-    "dotenv-cli": "3.1.0",
+    "dotenv-cli": "3.2.0",
     "dts-bundle-generator": "4.3.0",
     "eslint": "7.2.0",
     "eslint-config-prettier": "6.11.0",
