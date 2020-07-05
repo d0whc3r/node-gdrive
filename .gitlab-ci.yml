@@ -12,6 +12,7 @@ stages:
   - install
   - test
   - analysis
+  - release
   - update
 
 before_script:
@@ -57,6 +58,13 @@ sonarqube-reports-branch:
     - master
   script:
     - yarn sonar-scanner -Dsonar.login=${SONAR_TOKEN} -Dsonar.branch.name=${CI_BUILD_REF_NAME} -Dsonar.branch.target=master -Duser.home=./
+
+semantic-release:
+  stage: release
+  only:
+    - master
+  script:
+    - yarn semantic-release
 
 update-patch:
   stage: update
