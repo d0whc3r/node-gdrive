@@ -1,0 +1,67 @@
+# This workflow will do a clean install of node dependencies, build the source code and run tests across different versions of node
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
+
+name: Sonar CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [14.x]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v1
+      env:
+        CI: true
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}
+        CODECOVS_TOKEN: ${{ secrets.CODECOVS_TOKEN }}
+        COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+        CREDENTIALS_JSON: ${{ secrets.CREDENTIALS_JSON }}
+        DELETE_ALL_FILES: ${{ secrets.DELETE_ALL_FILES }}
+        TOKEN_JSON: ${{ secrets.TOKEN_JSON }}
+      with:
+        node-version: ${{ matrix.node-version }}
+    - run: yarn install
+    - run: yarn build
+    - run: yarn test:coverage
+    - run: yarn test:send-coverages
+    - name: SonarCloud Scan
+      uses: sonarsource/sonarcloud-github-action@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    - name: Semantic Release
+      uses: cycjimmy/semantic-release-action@v2
+      with:
+        branches: |
+          [
+            'master',
+            'next',
+            'next-major',
+            {
+              name: 'beta',
+              prerelease: true
+            },
+            {
+              name: 'alpha',
+              prerelease: true
+            }
+          ]
+        extra_plugins: |
+          @semantic-release/changelog
+          @semantic-release/git
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
