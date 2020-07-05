@@ -99,7 +99,8 @@ module.exports = {
     {
       files: ['**/*.e2e.ts', '**/*.spec.ts'],
       rules: {
-        'sonarjs/no-duplicate-string': 0
+        'sonarjs/no-duplicate-string': 0,
+        'sonarjs/cognitive-complexity': 0
       },
       env: {
         jest: true

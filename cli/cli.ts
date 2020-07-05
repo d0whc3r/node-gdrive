@@ -1,5 +1,5 @@
 import { Cli } from './climodule';
 
-(async () => {
+void (async () => {
   await new Cli().parseOptions();
 })();

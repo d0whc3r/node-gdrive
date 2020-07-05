@@ -1,10 +1,11 @@
 import * as fs from 'fs';
 import { google } from 'googleapis';
-import { GetTokenResponse } from 'google-auth-library/build/src/auth/oauth2client';
+import { GetTokenResponse, OAuth2Client } from 'google-auth-library/build/src/auth/oauth2client';
 import { Credentials } from 'google-auth-library/build/src/auth/credentials';
 import readline from 'readline';
 import colors from 'colors';
 import Config from './config';
+import { CredentialsFile, TokenFile } from './types';
 
 export default class Auth {
   public ready = true;
@@ -16,7 +17,7 @@ export default class Auth {
   ];
   private readonly TOKEN_FILE = Config.TOKEN_FILE;
   private readonly CREDENTIALS_FILE = Config.CREDENTIALS_FILE;
-  private _oAuth2Client: any = null;
+  private _oAuth2Client?: OAuth2Client;
 
   constructor() {
     if (!this.existsCredentials) {
@@ -45,11 +46,11 @@ export default class Auth {
 
   public oAuth2Client(withToken = true) {
     if (!this._oAuth2Client) {
-      const credentials = JSON.parse(fs.readFileSync(this.CREDENTIALS_FILE, 'utf8'));
+      const credentials = JSON.parse(fs.readFileSync(this.CREDENTIALS_FILE, 'utf8')) as CredentialsFile;
       const { client_secret, client_id, redirect_uris } = credentials.installed;
-      this._oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]) as any;
+      this._oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
       if (withToken) {
-        const token = JSON.parse(fs.readFileSync(this.TOKEN_FILE, 'utf8'));
+        const token = JSON.parse(fs.readFileSync(this.TOKEN_FILE, 'utf8')) as TokenFile;
         this._oAuth2Client.setCredentials(token);
       }
     }
@@ -91,10 +92,10 @@ export default class Auth {
     fs.writeFile(this.TOKEN_FILE, JSON.stringify(token), (err) => {
       if (err) {
         console.error(err);
-        reject(err);
+        void reject(err);
       } else {
         console.log(`${Config.TAG} Token stored to`, this.TOKEN_FILE);
-        resolve(true);
+        void resolve(true);
       }
     });
   }

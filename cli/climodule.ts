@@ -22,7 +22,7 @@ export class Cli {
   async parseOptions() {
     for (const command in this.opts) {
       if (Object.prototype.hasOwnProperty.call(this.opts, command)) {
-        const args = this.opts[command];
+        const args = this.opts[command] as string | string[];
         const zip = this.opts['zip'];
         const folder = this.opts['folder'];
         const replace = this.opts['replace'];
@@ -96,7 +96,9 @@ export class Cli {
     try {
       mysqlfile = await this.createDumpFile();
     } catch (err) {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call,@typescript-eslint/restrict-template-expressions
       console.error(colors.bold[theme.error](`${Config.TAG} Error mysql ${err}`));
       process.exit(-1);
     }
@@ -143,7 +145,7 @@ export class Cli {
     parsed.forEach((file) => {
       const fileName = file.isFolder ? this.showFolder(file.name) : file.name;
       const parent = file.parentFolder ? this.showFolder(`${file.parentFolder}/`) : '';
-      console.info(parent + fileName);
+      console.info(`${parent}${fileName || ''}`);
     });
   }
 
@@ -177,8 +179,10 @@ export class Cli {
     if (!name) {
       return '';
     }
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    return colors.bold[theme.folder](name);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+    return colors.bold[theme.folder](name) as string;
   }
 
   private createDumpFile(): Promise<string> {

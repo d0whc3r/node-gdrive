@@ -88,6 +88,7 @@ let options: GDriveOptions = {};
 try {
   options = commandLineArgs(optionDefinitions);
 } catch (e) {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
   console.error('[-] Error:', e.message);
   process.exit(1);
 }

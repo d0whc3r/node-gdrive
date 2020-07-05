@@ -20,6 +20,7 @@ import {
 } from './types';
 import os from 'os';
 import Schema$File = drive_v3.Schema$File;
+import { Socket } from 'net';
 
 export class GDrive {
   public readonly DEFAULT_FIELDS: FieldsType[] = ['createdTime', 'id', 'md5Checksum', 'mimeType', 'name', 'parents', 'trashed'];
@@ -37,7 +38,7 @@ export class GDrive {
     });
   }
 
-  private get auth(): any {
+  private get auth() {
     return this.gdriveAuth.oAuth2Client(true);
   }
 
@@ -75,16 +76,17 @@ export class GDrive {
     return this.getListFiles(info);
   }
 
-  async getFile(fileId?: string | null): Promise<Schema$File> {
+  async getFile(fileId?: string | null) {
     await this.initiated;
     if (!fileId) {
       return Promise.reject(this.genericError(new Error('File id not found')));
     }
     const info: Params$Resource$Files$Get = { fileId };
-    return this.drive.files
-      .get(info)
-      .then(({ data }) => data)
-      .catch((e) => this.genericError(e));
+    const promise = this.drive.files.get(info).then(({ data }) => data);
+    promise.catch((e) => {
+      this.genericError(e);
+    });
+    return promise;
   }
 
   async emptyTrash() {
@@ -92,22 +94,25 @@ export class GDrive {
     return this.drive.files.emptyTrash();
   }
 
-  async deleteFile(file: Schema$File$Modded): Promise<void> {
+  async deleteFile(file: Schema$File$Modded) {
     await this.initiated;
     if (file.id) {
-      return this.drive.files
-        .delete({ fileId: file.id })
-        .then(({ data }) => {
+      const promise = this.drive.files.delete({ fileId: file.id }).then(({ data }) => {
+        if (file.name) {
           console.warn(`${Config.TAG} Deleted ${file.isFolder ? 'folder' : 'file'}: ${file.name}`);
-          return data;
-        })
-        .catch((e) => this.genericError(e));
+        }
+        return data;
+      });
+      promise.catch((e) => {
+        this.genericError(e);
+      });
+      return promise;
     }
   }
 
-  async uploadFile(file: string, folderName?: string | boolean, options?: UploadOptionsBasic): Promise<Schema$File$Modded> {
+  async uploadFile(file: string, folderName?: string | boolean, options: UploadOptionsBasic = {}): Promise<Schema$File$Modded> {
     await this.initiated;
-    const { create, replace } = options || ({} as any);
+    const { create = true, replace = false } = options;
     const name = path.basename(file);
     const mimeType = mime.contentType(name) || undefined;
     const requestBody: Schema$File = {
@@ -137,19 +142,22 @@ export class GDrive {
     };
 
     const fileSize = fs.statSync(file).size;
-    const onUploadProgress = (evt: any) => {
+    const onUploadProgress = (evt: Socket) => {
       const progress = (evt.bytesRead / fileSize) * 100;
       if (progress === 100) {
         console.warn(`${Config.TAG} Upload ${name}: ${Math.round(progress)}% complete`);
       }
     };
-    return this.drive.files
+    const promise = this.drive.files
       .create(createOptions, { onUploadProgress })
       .then(({ data }) => this.parseFileMeta(data))
-      .catch((e) => this.genericError(e))
       .finally(() => {
         readStream.destroy();
       });
+    promise.catch((e) => {
+      this.genericError(e);
+    });
+    return promise;
   }
 
   async uploadFiles(
@@ -207,7 +215,7 @@ export class GDrive {
   }
 
   private getListFiles(info: Params$Resource$Files$List, files: Schema$File[] = []): Promise<Schema$File$Modded[]> {
-    return this.drive.files
+    const promise = this.drive.files
       .list(info)
       .then(async ({ data }) => {
         files = files.concat(data.files as Schema$File[]);
@@ -218,8 +226,11 @@ export class GDrive {
           return files;
         }
       })
-      .then((allFiles) => this.parseFilesMeta(allFiles))
-      .catch((e) => this.genericError(e));
+      .then((allFiles) => this.parseFilesMeta(allFiles));
+    promise.catch((e) => {
+      this.genericError(e);
+    });
+    return promise;
   }
 
   private async replaceExistingFolder(replace: boolean, name: string, folderId: string) {
@@ -285,7 +296,8 @@ export class GDrive {
     return [...files].map((file) => this.parseFileMeta(file));
   }
 
-  private genericError<T>(err: T): T {
+  private genericError<T = Error>(err: T): T {
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     console.error(`${Config.TAG} The API returned an error: ${err}`);
     return err;
   }
@@ -317,8 +329,8 @@ export class GDrive {
     return null;
   }
 
-  private async createFolder(folderName: string): Promise<Schema$File> {
-    const createdFolder = await this.drive.files
+  private async createFolder(folderName: string) {
+    const promise = this.drive.files
       .create({
         requestBody: {
           name: folderName,
@@ -326,9 +338,14 @@ export class GDrive {
         },
         fields: 'id'
       })
-      .then(({ data }) => data)
-      .catch((e) => this.genericError(e));
-    console.warn(`${Config.TAG} Created folder "${folderName}" with id: "${createdFolder.id}"`);
+      .then(({ data }) => data);
+    promise.catch((e) => {
+      this.genericError(e);
+    });
+    const createdFolder = await promise;
+    if (createdFolder?.id) {
+      console.warn(`${Config.TAG} Created folder "${folderName}" with id: "${createdFolder.id}"`);
+    }
     return createdFolder;
   }
 
