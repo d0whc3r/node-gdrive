@@ -1,6 +1,5 @@
 import autoExternal from 'rollup-plugin-auto-external';
 import esbuild from 'rollup-plugin-esbuild';
-import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
 import nodeResolve from '@rollup/plugin-node-resolve';
 import builtinModules from 'builtin-modules';
@@ -8,20 +7,14 @@ import pkgJson from './package.json';
 
 export default function odpRollupConfig(options) {
   const resolveOptions = {
-    mainFields: ['jsnext:main', 'es2017', 'es2015', 'module', 'main'],
+    mainFields: ['jsnext:main', 'es2020', 'es2018', 'es2017', 'es2015', 'module', 'main'],
     preferBuiltins: true,
     extensions: ['.ts', '.js', '.mjs', '.node'],
     modulesOnly: false,
-    browser: true
+    browser: false
   };
   const plugins = [
-    json({
-      exclude: 'node_modules/**',
-      preferConst: true,
-      compact: true,
-      namedExports: true,
-      indent: '  '
-    }),
+    json(),
     autoExternal({
       builtins: true,
       peerDependencies: true,
@@ -31,29 +24,29 @@ export default function odpRollupConfig(options) {
     esbuild({
       minify: true,
       target: 'esnext'
-    }),
-    commonjs()
+    })
   ];
 
   const external = [...builtinModules];
-  const outputConfig = { sourcemap: false, globals: {} };
-  const output = {
+  const outputMain = {
     input: 'src/index.ts',
     treeshake: true,
-    output: [
-      { ...outputConfig, file: pkgJson.main, format: 'cjs' },
-      { ...outputConfig, file: pkgJson.module, format: 'esm' }
-    ],
+    output: [{ sourcemap: false, file: pkgJson.main, format: 'cjs' }],
     plugins,
     external,
     ...options
   };
+  const outputModule = {
+    ...outputMain,
+    output: [{ sourcemap: false, file: pkgJson.module, format: 'esm' }]
+  };
   return [
-    output,
+    outputMain,
+    outputModule,
     {
-      ...output,
+      ...outputMain,
       input: 'cli/cli.ts',
-      output: [{ ...outputConfig, file: 'bin/cli.js', format: 'cjs', banner: '#!/usr/bin/env node' }]
+      output: [{ sourcemap: false, file: 'bin/cli.js', format: 'cjs', banner: '#!/usr/bin/env node' }]
     }
   ];
 }

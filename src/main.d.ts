@@ -19,7 +19,7 @@ export declare class GDrive {
 
   listFiles(fields?: boolean | FieldsType[], pageSize?: number): Promise<Schema$File$Modded[]>;
 
-  getFile(fileId?: string | null): Promise<Schema$File>;
+  getFile(fileId?: string | null): Promise<drive_v3.Schema$File>;
 
   emptyTrash(): Promise<import('gaxios').GaxiosResponse<void>>;
 
@@ -27,7 +27,11 @@ export declare class GDrive {
 
   uploadFile(file: string, folderName?: string | boolean, options?: UploadOptionsBasic): Promise<Schema$File$Modded>;
 
-  uploadFiles(files: string | string[], folderName?: string | boolean, options?: UploadOptions): Promise<{
+  uploadFiles(
+    files: string | string[],
+    folderName?: string | boolean,
+    options?: UploadOptions
+  ): Promise<{
     [filename: string]: Schema$File$Modded;
   }>;
 
@@ -47,56 +51,56 @@ export declare class GDrive {
 }
 
 export declare type FieldsType =
-    'appProperties'
-    | 'capabilities'
-    | 'contentHints'
-    | 'createdTime'
-    | 'description'
-    | 'explicitlyTrashed'
-    | 'fileExtension'
-    | 'folderColorRgb'
-    | 'fullFileExtension'
-    | 'hasAugmentedPermissions'
-    | 'hasThumbnail'
-    | 'headRevisionId'
-    | 'iconLink'
-    | 'id'
-    | 'imageMediaMetadata'
-    | 'isAppAuthorized'
-    | 'kind'
-    | 'lastModifyingUser'
-    | 'md5Checksum'
-    | 'mimeType'
-    | 'modifiedByMe'
-    | 'modifiedByMeTime'
-    | 'modifiedTime'
-    | 'name'
-    | 'originalFilename'
-    | 'ownedByMe'
-    | 'owners'
-    | 'parents'
-    | 'properties'
-    | 'quotaBytesUsed'
-    | 'shared'
-    | 'sharedWithMeTime'
-    | 'sharingUser'
-    | 'size'
-    | 'spaces'
-    | 'starred'
-    | 'teamDriveId'
-    | 'thumbnailLink'
-    | 'thumbnailVersion'
-    | 'trashed'
-    | 'trashedTime'
-    | 'trashingUser'
-    | 'version'
-    | 'videoMediaMetadata'
-    | 'viewedByMe'
-    | 'viewedByMeTime'
-    | 'viewersCanCopyContent'
-    | 'webContentLink'
-    | 'webViewLink'
-    | 'writersCanShare';
+  | 'appProperties'
+  | 'capabilities'
+  | 'contentHints'
+  | 'createdTime'
+  | 'description'
+  | 'explicitlyTrashed'
+  | 'fileExtension'
+  | 'folderColorRgb'
+  | 'fullFileExtension'
+  | 'hasAugmentedPermissions'
+  | 'hasThumbnail'
+  | 'headRevisionId'
+  | 'iconLink'
+  | 'id'
+  | 'imageMediaMetadata'
+  | 'isAppAuthorized'
+  | 'kind'
+  | 'lastModifyingUser'
+  | 'md5Checksum'
+  | 'mimeType'
+  | 'modifiedByMe'
+  | 'modifiedByMeTime'
+  | 'modifiedTime'
+  | 'name'
+  | 'originalFilename'
+  | 'ownedByMe'
+  | 'owners'
+  | 'parents'
+  | 'properties'
+  | 'quotaBytesUsed'
+  | 'shared'
+  | 'sharedWithMeTime'
+  | 'sharingUser'
+  | 'size'
+  | 'spaces'
+  | 'starred'
+  | 'teamDriveId'
+  | 'thumbnailLink'
+  | 'thumbnailVersion'
+  | 'trashed'
+  | 'trashedTime'
+  | 'trashingUser'
+  | 'version'
+  | 'videoMediaMetadata'
+  | 'viewedByMe'
+  | 'viewedByMeTime'
+  | 'viewersCanCopyContent'
+  | 'webContentLink'
+  | 'webViewLink'
+  | 'writersCanShare';
 
 export interface Schema$File$Modded extends Schema$File {
   isDeleted: boolean;
@@ -112,7 +116,5 @@ export interface UploadOptionsBasic {
   create?: boolean;
   replace?: boolean;
 }
-
-export as namespace gdrive;
 
 export {};

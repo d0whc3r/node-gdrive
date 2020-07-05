@@ -8,24 +8,14 @@
       "outFile": "./dist/index.d.ts",
       "failOnClass": false,
       "libraries": {
-        "allowedTypesLibraries": [
-          "node"
-        ],
-        "importedLibraries": [
-          "googleapis",
-          "node",
-          "gaxios"
-        ],
-        "inlinedLibraries": [
-          "typescript",
-          "gaxios"
-        ]
+        "allowedTypesLibraries": ["node", "gaxios"],
+        "importedLibraries": ["googleapis"],
+        "inlinedLibraries": []
       },
       "output": {
         "inlineDeclareGlobals": false,
         "sortNodes": true,
-        "inlineDeclareExternals": true,
-        "umdModuleName": "gdrive"
+        "inlineDeclareExternals": true
       }
     }
   ]

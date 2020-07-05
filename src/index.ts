@@ -19,7 +19,6 @@ import {
   UploadOptionsBasic
 } from './types';
 import os from 'os';
-import Schema$File = drive_v3.Schema$File;
 import { Socket } from 'net';
 
 export class GDrive {
@@ -46,14 +45,14 @@ export class GDrive {
     return google.drive({ version: 'v3', auth: this.auth });
   }
 
-  public isFolder(file: Schema$File) {
+  public isFolder(file: drive_v3.Schema$File) {
     if (Object.prototype.hasOwnProperty.call(file, 'mimeType')) {
       return file.mimeType === this.MIME_FOLDER;
     }
     return undefined;
   }
 
-  public isDeleted(file: Schema$File): boolean {
+  public isDeleted(file: drive_v3.Schema$File): boolean {
     if (Object.prototype.hasOwnProperty.call(file, 'trashed')) {
       return !!file.trashed;
     }
@@ -115,7 +114,7 @@ export class GDrive {
     const { create = true, replace = false } = options;
     const name = path.basename(file);
     const mimeType = mime.contentType(name) || undefined;
-    const requestBody: Schema$File = {
+    const requestBody: drive_v3.Schema$File = {
       name,
       mimeType
     };
@@ -214,11 +213,11 @@ export class GDrive {
     await this.deleteOlder(match, folderId);
   }
 
-  private getListFiles(info: Params$Resource$Files$List, files: Schema$File[] = []): Promise<Schema$File$Modded[]> {
+  private getListFiles(info: Params$Resource$Files$List, files: drive_v3.Schema$File[] = []): Promise<Schema$File$Modded[]> {
     const promise = this.drive.files
       .list(info)
       .then(async ({ data }) => {
-        files = files.concat(data.files as Schema$File[]);
+        files = files.concat(data.files as drive_v3.Schema$File[]);
         if (data.nextPageToken) {
           info.pageToken = data.nextPageToken;
           return this.getListFiles(info, files);
@@ -247,7 +246,7 @@ export class GDrive {
     }
   }
 
-  private async getUploadFolderId(folderName: string | boolean, create: boolean, requestBody: Schema$File) {
+  private async getUploadFolderId(folderName: string | boolean, create: boolean, requestBody: drive_v3.Schema$File) {
     let folderId = '';
     if (folderName && typeof folderName === 'string') {
       folderId = await this.findFolderId(folderName, create === undefined ? true : create);
@@ -284,7 +283,7 @@ export class GDrive {
     }
   }
 
-  private parseFileMeta(file: Schema$File): Schema$File$Modded {
+  private parseFileMeta(file: drive_v3.Schema$File): Schema$File$Modded {
     return {
       ...file,
       isDeleted: this.isDeleted(file),
@@ -292,7 +291,7 @@ export class GDrive {
     };
   }
 
-  private parseFilesMeta(files: Schema$File[]): Schema$File$Modded[] {
+  private parseFilesMeta(files: drive_v3.Schema$File[]): Schema$File$Modded[] {
     return [...files].map((file) => this.parseFileMeta(file));
   }
 

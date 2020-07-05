@@ -1,10 +1,9 @@
 import { drive_v3 } from 'googleapis';
-import Schema$File = drive_v3.Schema$File;
 import Params$Resource$Files$Get = drive_v3.Params$Resource$Files$Get;
 import Params$Resource$Files$List = drive_v3.Params$Resource$Files$List;
 import Params$Resource$Files$Create = drive_v3.Params$Resource$Files$Create;
 
-export { Schema$File, Params$Resource$Files$Create, Params$Resource$Files$Get, Params$Resource$Files$List };
+export { Params$Resource$Files$Create, Params$Resource$Files$Get, Params$Resource$Files$List };
 
 export type FieldsType =
   | 'appProperties'
@@ -109,7 +108,7 @@ export const allFileTypes: FieldsType[] = [
   'writersCanShare'
 ];
 
-export interface Schema$File$Modded extends Schema$File {
+export interface Schema$File$Modded extends drive_v3.Schema$File {
   isDeleted: boolean;
   isFolder: boolean;
   parentFolder?: string;

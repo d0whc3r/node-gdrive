@@ -46,7 +46,7 @@
     "build:pkg": "pkg -t node14-linux-x64 -o node-gdrive bin/cli.js",
     "build:pkg:windows": "pkg -t node14-win-x64 -o node-gdrive.exe bin/cli.js",
     "build:pkg:macos": "pkg -t node14-macos-x64 -o node-gdrive bin/cli.js",
-    "build:base": "npm run build:clean && run-s build:dist copy:dts",
+    "build:base": "npm run build:clean && run-p build:dist build:dts",
     "build": "run-s build:base build:pkg",
     "build:windows": "run-s build:base build:pkg:windows",
     "build:macos": "run-s build:base build:pkg:macos",
