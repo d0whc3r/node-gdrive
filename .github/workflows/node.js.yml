@@ -26,10 +26,10 @@ jobs:
         CI: true
       with:
         node-version: ${{ matrix.node-version }}
-    - run: yarn install
-    - run: yarn build
-    - run: yarn test:coverage
-    - run: yarn test:send-coverages
+    - run: npm install
+    - run: npm run build
+    - run: npm run test:coverage
+    - run: npm run test:send-coverages
     - name: SonarCloud Scan
       uses: sonarsource/sonarcloud-github-action@master
       env:
