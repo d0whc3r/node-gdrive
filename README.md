@@ -4,7 +4,7 @@ Utility to manipulate google drive using nodejs. It could upload content to goog
 
 # :eyes: Project status
 
-[![pipeline status](https://gitlab.com/d0whc3r/node-gdrive/badges/master/pipeline.svg)](https://github.com/d0whc3r/node-gdrive)
+![Node.js CI](https://github.com/d0whc3r/node-gdrive/workflows/Node.js%20CI/badge.svg)
 [![codecov](https://codecov.io/gh/d0whc3r/node-gdrive/branch/master/graph/badge.svg)](https://codecov.io/gh/d0whc3r/node-gdrive)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/2612116bab5f493cada70bffc3cb6492)](https://www.codacy.com/app/d0whc3r/node-gdrive?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=d0whc3r/node-gdrive&amp;utm_campaign=Badge_Grade)
 

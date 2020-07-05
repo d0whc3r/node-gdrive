@@ -7,7 +7,10 @@
     "name": "d0whc3r",
     "url": "https://github.com/d0whc3r"
   },
-  "repository": "https://github.com/d0whc3r/node-gdrive.git",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/d0whc3r/node-gdrive.git"
+  },
   "bin": {
     "node-gdrive": "./bin/cli.js"
   },
@@ -57,7 +60,9 @@
     "postversion": "git push --follow-tags",
     "eslint": "eslint -c .eslintrc.js --ext .ts,.js src cli",
     "eslint:fix": "yarn eslint --fix",
-    "format": "pretty-quick \"{src,cli}/**/*.ts\" --write --staged"
+    "format": "pretty-quick \"{src,cli}/**/*.ts\" --write --staged",
+    "commit": "git-cz",
+    "semantic-release": "semantic-release"
   },
   "dependencies": {
     "archiver": "4.0.1",
@@ -91,8 +96,10 @@
     "@typescript-eslint/eslint-plugin": "3.5.0",
     "@typescript-eslint/parser": "3.5.0",
     "builtin-modules": "3.1.0",
+    "commitizen": "4.1.2",
     "core-js": "3.6.5",
     "coveralls": "3.1.0",
+    "cz-conventional-changelog": "3.2.0",
     "dotenv": "8.2.0",
     "dotenv-cli": "3.2.0",
     "dts-bundle-generator": "5.0.0",
@@ -121,6 +128,7 @@
     "rollup-plugin-auto-external": "2.0.0",
     "rollup-plugin-esbuild": "2.1.0",
     "rollup-plugin-node-builtins": "2.1.2",
+    "semantic-release": "17.1.1",
     "sonar-scanner": "3.1.0",
     "ts-jest": "26.1.1",
     "ts-node": "8.10.2",
@@ -145,5 +153,11 @@
     "{src,cli}/**/*.ts": [
       "yarn format"
     ]
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org"
+  },
+  "czConfig": {
+    "path": "node_modules/cz-conventional-changelog"
   }
 }
