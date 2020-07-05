@@ -2,7 +2,7 @@ FROM node:14 AS builder
 
 ENV NODE_OPTIONS "--max_old_space_size=2048"
 
-COPY package.json yarn.lock tsconfig.json rollup.config.js dts-config /app/
+COPY package.json yarn.lock tsconfig.json rollup.config.js dts-config.json /app/
 WORKDIR /app
 
 RUN yarn install
