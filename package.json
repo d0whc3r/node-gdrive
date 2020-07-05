@@ -33,11 +33,11 @@
     "googleapi"
   ],
   "scripts": {
-    "ci": "npm run clean && npm install",
-    "clean": "npm run clean:packages",
+    "ci": "yarn clean && yarn install",
+    "clean": "yarn clean:packages",
     "clean:packages": "rm -fr yarn.lock package-lock.json dist bin build node_modules",
     "dev": "dotenv -e .env -- node -r ts-node/register -r tsconfig-paths/register src/test.ts",
-    "cli:dev": "dotenv -e .env -- npm run cli",
+    "cli:dev": "dotenv -e .env -- yarn cli",
     "cli": "node -r ts-node/register -r tsconfig-paths/register cli/cli.ts",
     "build:clean": "rimraf dist bin",
     "build:dist": "rollup -c",
@@ -46,20 +46,20 @@
     "build:pkg": "pkg -t node14-linux-x64 -o node-gdrive bin/cli.js",
     "build:pkg:windows": "pkg -t node14-win-x64 -o node-gdrive.exe bin/cli.js",
     "build:pkg:macos": "pkg -t node14-macos-x64 -o node-gdrive bin/cli.js",
-    "build:base": "npm run build:clean && run-p build:dist build:dts",
+    "build:base": "yarn build:clean && run-p build:dist build:dts",
     "build": "run-s build:base build:pkg",
     "build:windows": "run-s build:base build:pkg:windows",
     "build:macos": "run-s build:base build:pkg:macos",
     "test": "jest -i --colors",
-    "test:fakeci": "dotenv -e test.env -- npm run test",
-    "test:coverage": "npm run test -- --coverage",
+    "test:fakeci": "dotenv -e test.env -- yarn test",
+    "test:coverage": "yarn test --coverage",
     "test:send-coverages": "run-p coverage:codecovs coverage:coveralls coverage:codacy",
     "coverage:codecovs": "curl -s https://codecov.io/bash | bash",
     "coverage:coveralls": "cat ./coverage/lcov.info | coveralls",
     "coverage:codacy": "wget -q https://coverage.codacy.com/get.sh && bash get.sh report -l typescript -r coverage/lcov.info",
     "postversion": "git push --follow-tags",
     "eslint": "eslint -c .eslintrc.js --ext .ts,.js src cli",
-    "eslint:fix": "npm run eslint --fix",
+    "eslint:fix": "yarn eslint --fix",
     "format": "pretty-quick \"{src,cli}/**/*.ts\" --write --staged",
     "commit": "git-cz",
     "semantic-release": "semantic-release"
@@ -146,13 +146,13 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "npm run eslint:fix && lint-staged",
+      "pre-commit": "yarn eslint:fix && lint-staged",
       "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
     }
   },
   "lint-staged": {
     "{src,cli}/**/*.ts": [
-      "npm run format"
+      "yarn format"
     ]
   },
   "publishConfig": {

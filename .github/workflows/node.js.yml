@@ -16,7 +16,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [14.x]
+        node-version: [12.x, 14.x]
 
     steps:
     - uses: actions/checkout@v2
@@ -24,12 +24,19 @@ jobs:
       uses: actions/setup-node@v1
       env:
         CI: true
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}
+        CODECOVS_TOKEN: ${{ secrets.CODECOVS_TOKEN }}
+        COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+        CREDENTIALS_JSON: ${{ secrets.CREDENTIALS_JSON }}
+        DELETE_ALL_FILES: ${{ secrets.DELETE_ALL_FILES }}
+        TOKEN_JSON: ${{ secrets.TOKEN_JSON }}
       with:
         node-version: ${{ matrix.node-version }}
-    - run: npm install
-    - run: npm run build
-    - run: npm run test:coverage
-    - run: npm run test:send-coverages
+    - run: yarn install
+    - run: yarn build
+    - run: yarn test:coverage
+    - run: yarn test:send-coverages
     - name: SonarCloud Scan
       uses: sonarsource/sonarcloud-github-action@master
       env:
