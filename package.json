@@ -61,7 +61,8 @@
     "eslint:fix": "yarn eslint --fix",
     "format": "pretty-quick \"{src,cli}/**/*.ts\" --write --staged",
     "commit": "git-cz",
-    "semantic-release": "semantic-release"
+    "semantic-release": "semantic-release",
+    "postversion": "git commit -am 'chore(bump): bump version [skip-ci]' && git push --follow-tags"
   },
   "dependencies": {
     "archiver": "4.0.1",
@@ -84,6 +85,11 @@
     "@rollup/plugin-commonjs": "13.0.0",
     "@rollup/plugin-json": "4.1.0",
     "@rollup/plugin-node-resolve": "8.1.0",
+    "@semantic-release/changelog": "5.0.1",
+    "@semantic-release/commit-analyzer": "8.0.1",
+    "@semantic-release/github": "7.0.7",
+    "@semantic-release/npm": "7.0.5",
+    "@semantic-release/release-notes-generator": "9.0.1",
     "@types/archiver": "3.1.0",
     "@types/command-line-args": "5.0.0",
     "@types/command-line-usage": "5.0.1",
@@ -155,7 +161,8 @@
     ]
   },
   "publishConfig": {
-    "registry": "https://registry.npmjs.org"
+    "registry": "https://registry.npmjs.org",
+    "access": "public"
   },
   "czConfig": {
     "path": "node_modules/cz-conventional-changelog"
