@@ -3735,7 +3735,12 @@ es6-promisify@^5.0.0:
   dependencies:
     es6-promise "^4.0.3"
 
-esbuild@0.5.21, esbuild@^0.5.3:
+esbuild@0.5.24:
+  version "0.5.24"
+  resolved "https://registry.yarnpkg.com/esbuild/-/esbuild-0.5.24.tgz#7f745c34346e842e7a5347dec0b6b65f43cacd1e"
+  integrity sha512-DBbxT8IBzgvhfm6SXopzMZt9xDQGgBBVnLqTYVRgHKPwBIu6Sg/haBbPAVCwBnNHwJtouBrfo8oTMIPoF8p9eg==
+
+esbuild@^0.5.3:
   version "0.5.21"
   resolved "https://registry.yarnpkg.com/esbuild/-/esbuild-0.5.21.tgz#09dd151e09bc3d205a0a318a3be865b0d749859a"
   integrity sha512-ycd78Vw+eusNr5C9Ee7ixzJ8W2W3KamEMv8wRK2ElcKQMhXMKEkY+9ienyEuM6hLzkAx3+CiKlXxYGiTepG07g==
