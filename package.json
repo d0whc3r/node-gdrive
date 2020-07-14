@@ -76,7 +76,7 @@
     "mysqldump": "3.2.0"
   },
   "devDependencies": {
-    "@babel/core": "7.10.4",
+    "@babel/core": "7.10.5",
     "@babel/plugin-syntax-import-meta": "7.10.4",
     "@babel/plugin-transform-regenerator": "7.10.4",
     "@babel/preset-env": "7.10.4",
