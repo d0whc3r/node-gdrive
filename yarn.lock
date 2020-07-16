@@ -3745,11 +3745,6 @@ esbuild@0.5.24:
   resolved "https://registry.yarnpkg.com/esbuild/-/esbuild-0.5.24.tgz#7f745c34346e842e7a5347dec0b6b65f43cacd1e"
   integrity sha512-DBbxT8IBzgvhfm6SXopzMZt9xDQGgBBVnLqTYVRgHKPwBIu6Sg/haBbPAVCwBnNHwJtouBrfo8oTMIPoF8p9eg==
 
-esbuild@^0.5.3:
-  version "0.5.21"
-  resolved "https://registry.yarnpkg.com/esbuild/-/esbuild-0.5.21.tgz#09dd151e09bc3d205a0a318a3be865b0d749859a"
-  integrity sha512-ycd78Vw+eusNr5C9Ee7ixzJ8W2W3KamEMv8wRK2ElcKQMhXMKEkY+9ienyEuM6hLzkAx3+CiKlXxYGiTepG07g==
-
 escalade@^3.0.1:
   version "3.0.1"
   resolved "https://registry.yarnpkg.com/escalade/-/escalade-3.0.1.tgz#52568a77443f6927cd0ab9c73129137533c965ed"
@@ -8946,13 +8941,12 @@ rollup-plugin-auto-external@2.0.0:
     safe-resolve "^1.0.0"
     semver "^5.5.0"
 
-rollup-plugin-esbuild@2.1.0:
-  version "2.1.0"
-  resolved "https://registry.yarnpkg.com/rollup-plugin-esbuild/-/rollup-plugin-esbuild-2.1.0.tgz#8e12337c63a5b1144e0c5e8adf2f1568ad4d7d69"
-  integrity sha512-XYqmwk4X0SPEExgilARbre/PplhLtE3q6wiZtfgIbwxJOVGXWec1Bkcux7TFTHGX3TQozzqEASTsRJCt7py/5Q==
+rollup-plugin-esbuild@2.3.0:
+  version "2.3.0"
+  resolved "https://registry.yarnpkg.com/rollup-plugin-esbuild/-/rollup-plugin-esbuild-2.3.0.tgz#7c107d4508af80d30966a148b306cb7d5b36b258"
+  integrity sha512-lNbWDRaClwXauaIybuaiOBRWgxcp3GkZu0UUix9yH/OHFgVohKmzlU0NtNbvfbxAcfEooyuBRAv6YCaJl1Mbpw==
   dependencies:
     "@rollup/pluginutils" "^3.1.0"
-    esbuild "^0.5.3"
 
 rollup-plugin-node-builtins@2.1.2:
   version "2.1.2"
