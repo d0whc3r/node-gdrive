@@ -23,7 +23,7 @@ export default function odpRollupConfig(options) {
     nodeResolve(resolveOptions),
     esbuild({
       minify: true,
-      target: 'esnext'
+      target: 'es2015'
     })
   ];
 
