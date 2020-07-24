@@ -70,7 +70,7 @@
     "command-line-args": "5.1.1",
     "command-line-usage": "6.1.0",
     "glob": "7.1.6",
-    "googleapis": "54.1.0",
+    "googleapis": "56.0.0",
     "mime-types": "2.1.27",
     "moment": "2.27.0",
     "mysqldump": "3.2.0"
