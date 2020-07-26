@@ -119,7 +119,7 @@
     "jest": "26.1.0",
     "jest-chain": "1.1.5",
     "jest-extended": "0.11.5",
-    "jest-junit": "11.0.1",
+    "jest-junit": "11.1.0",
     "jest-sonar-reporter": "2.0.0",
     "lint-staged": "10.2.11",
     "mock-stdin": "1.0.0",
