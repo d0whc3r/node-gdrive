@@ -137,7 +137,7 @@
     "semantic-release": "17.1.1",
     "sonar-scanner": "3.1.0",
     "ts-jest": "26.2.0",
-    "ts-node": "8.10.2",
+    "ts-node": "9.1.1",
     "tsconfig-paths": "3.9.0",
     "typescript": "3.9.7"
   },
