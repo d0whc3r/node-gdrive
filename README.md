@@ -1,140 +1,265 @@
-# :floppy_disk: Node gdrive
+# node-gdrive
 
-Utility to manipulate google drive using nodejs. It could upload content to google drive and it could be used as backup service.
+Modern Google Drive backup, restore, retention, and management CLI & TypeScript library built on **Node.js 26** and **`@googleapis/drive`**. Supports **Service Accounts / ADC**, **OAuth2 loopback with PKCE**, **Shared Drives**, nested folders, and client-side encryption.
 
-# :eyes: Project status
+[![CI](https://img.shields.io/github/actions/workflow/status/d0whc3r/node-gdrive/ci.yml?branch=master&style=flat-square&logo=githubactions&logoColor=white&label=CI)](https://github.com/d0whc3r/node-gdrive/actions/workflows/ci.yml)
+[![npm version](https://img.shields.io/npm/v/@d0whc3r/node-gdrive?style=flat-square&logo=npm&logoColor=white)](https://www.npmjs.com/package/@d0whc3r/node-gdrive)
+[![npm downloads](https://img.shields.io/npm/dm/@d0whc3r/node-gdrive?style=flat-square&logo=npm&logoColor=white)](https://www.npmjs.com/package/@d0whc3r/node-gdrive)
+[![Node.js](https://img.shields.io/badge/Node.js-%3E%3D26-339933?style=flat-square&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-7-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](https://opensource.org/licenses/MIT)
 
-[![pipeline status](https://gitlab.com/d0whc3r/node-gdrive/badges/master/pipeline.svg)](https://github.com/d0whc3r/node-gdrive)
-[![codecov](https://codecov.io/gh/d0whc3r/node-gdrive/branch/master/graph/badge.svg)](https://codecov.io/gh/d0whc3r/node-gdrive)
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/2612116bab5f493cada70bffc3cb6492)](https://www.codacy.com/app/d0whc3r/node-gdrive?utm_source=github.com&utm_medium=referral&utm_content=d0whc3r/node-gdrive&utm_campaign=Badge_Grade)
+---
 
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=d0whc3r_node-gdrive&metric=alert_status)](https://sonarcloud.io/dashboard?id=d0whc3r_node-gdrive)
-[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=d0whc3r_node-gdrive&metric=sqale_rating)](https://sonarcloud.io/dashboard?id=d0whc3r_node-gdrive)
-[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=d0whc3r_node-gdrive&metric=security_rating)](https://sonarcloud.io/dashboard?id=d0whc3r_node-gdrive)
-[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=d0whc3r_node-gdrive&metric=bugs)](https://sonarcloud.io/dashboard?id=d0whc3r_node-gdrive)
-[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=d0whc3r_node-gdrive&metric=vulnerabilities)](https://sonarcloud.io/dashboard?id=d0whc3r_node-gdrive)
+## Quick Start
 
-![dependencies](https://img.shields.io/david/d0whc3r/node-gdrive.svg)
-[![npm version](https://img.shields.io/npm/v/@d0whc3r%2Fnode-gdrive.svg)](https://www.npmjs.com/package/@d0whc3r/node-gdrive)
-
-[![](https://img.shields.io/docker/cloud/build/d0whc3r/gdrive.svg)](https://hub.docker.com/r/d0whc3r/gdrive)
-[![](https://images.microbadger.com/badges/version/d0whc3r/gdrive.svg)](https://hub.docker.com/r/d0whc3r/gdrive)
-[![](https://images.microbadger.com/badges/image/d0whc3r/gdrive.svg)](https://hub.docker.com/r/d0whc3r/gdrive)
-
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fd0whc3r%2Fnode-gdrive.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fd0whc3r%2Fnode-gdrive?ref=badge_shield)
-
-## :key: Create credentials and token files
-
-To get `credentials.json` file you need to visit:
-
-- [https://developers.google.com/drive/api/v3/quickstart/nodejs](https://developers.google.com/drive/api/v3/quickstart/nodejs)
-
-Then click `ENABLE THE DRIVE API` and click `DOWNLOAD CLIENT CONFIGURATION`
-
-This will download **credentials.json** file, you can save it in _secrets_ folder in the project.
-Now you need to generate **token.json** file, to do this you need to execute any command to access your google-drive, for example:
-
-### :boat: Using docker
-
-Then you could execute a simple command to generate token.json:
-
-> Be careful to copy `credentials.json` into `$PWD/secrets` path
+1. **Choose your authentication method** (Service Account for servers/CI, or OAuth2 for personal Drive):
 
 ```bash
-docker run --rm -it -v $PWD/secrets:/app/secrets/ d0whc3r/gdrive -l
+# Option A — Service Account (recommended for servers, cron & Docker)
+export GOOGLE_APPLICATION_CREDENTIALS="./secrets/service-account.json"
+
+# Option B — OAuth2 Desktop credentials (opens a local loopback callback on first run)
+export CREDENTIALS_FILE="./secrets/credentials.json"
 ```
 
-### :pencil: Using downloaded project
-
-> First you need to download project from github using:
+2. **Run your first backup** (compresses `./data`, creates nested folders `backups/daily` if missing, and replaces any existing file):
 
 ```bash
-git clone https://github.com/d0whc3r/node-gdrive.git
-cd node-gdrive
-yarn install
+npx @d0whc3r/node-gdrive -b ./data -z data-backup.zip -f backups/daily -c -r
 ```
 
-Then you could execute a simple command to generate token.json:
+3. **Preview retention cleanup safely** before deleting anything (`--dry-run` + `--keep-last`):
 
 ```bash
-yarn cli -l
+npx @d0whc3r/node-gdrive -f backups/daily -d 30d --keep-last 5 --dry-run
 ```
 
-### :beginner: Next step
+---
 
-Using docker or project files the `-l` command is for listing existing files in google-drive
+## Features
 
-If _credentials.json_ is present but _token.json_ is missing this last file will be generated showing an url into terminal output, you need to enter that url and validate all needed permisions, then a token will be shown in your web browser, this token need to be pasted in terminal.
+- **Modern Google Authentication**:
+  - **Service Account / ADC** (`--service-account` / `GOOGLE_APPLICATION_CREDENTIALS`) for headless servers, cron jobs, and CI/CD.
+  - **Localhost Loopback OAuth2 + PKCE** (`http://127.0.0.1:<port>/oauth2callback`) with automatic token refresh persistence (`0600` permissions).
+- **Shared Drives & Nested Folders**: Target Google Workspace Shared Drives (`--drive-id`) and upload to nested paths (`-f backups/prod/mysql`) with fast Drive API `q` queries.
+- **Flexible Backups**: Upload files, directories, globs, or piped `--stdin` streams with optional ZIP compression, `--exclude` filters, bounded parallel uploads, and exponential backoff retries on `429`/`5xx`.
+- **Download & Restore**: Download by file ID or filename (`--download <file> -o <path>`) with optional transparent decryption.
+- **Client-Side Encryption (`--encrypt`)**: Streaming **AES-256-GCM** encryption using Node.js built-in `node:crypto` (`scrypt` key derivation, random salt & IV, authentication tag).
+- **Safe Retention Cleanup (`-d`)**: Delete files older than a duration (`s`, `m`, `h`, `d`, `w`, `M`, `y`) with `--keep-last <N>` protection, automatic folder/trash exclusion, and `--dry-run` preview.
+- **MySQL Backups (`-m`)**: Dump a MySQL database, optionally zip/encrypt it, upload to Drive, and automatically clean up temporary files (`0600` permissions in a private `0700` temp directory).
+- **Standalone Binaries**: Native Node.js 26 Single Executable Applications (SEA) for Linux, macOS, and Windows—no Node.js installation needed on target servers.
 
-By default this software check for credentials (and token) file in folder `secrets` but it could be changed using environment variables:
+---
 
-- **CREDENTIALS_FILE**: File with credentials (credentials.json)
-- **TOKEN_FILE**: File with token, generated using credentials (token.json)
+## Installation
 
-## :boat: Docker usage
-
-You could use cli app in docker
-
-### :rowboat: Build docker image
+### Option 1: Run on demand or install globally (requires Node.js >= 26)
 
 ```bash
-docker build -t gdrive .
+# Run without installing
+npx @d0whc3r/node-gdrive --help
+
+# Install globally
+npm install -g @d0whc3r/node-gdrive
+
+# Add to a Node.js / TypeScript project
+pnpm add @d0whc3r/node-gdrive
 ```
 
-### :checkered_flag: Run cli commands inside docker
+### Option 2: Standalone Binary (Node.js 26 SEA)
+
+Build a self-contained binary for your OS (or download prebuilt artifacts from GitHub Actions):
 
 ```bash
-docker run --rm gdrive --help
+pnpm install
+pnpm build:sea
+./node-gdrive --version
+./node-gdrive --help
 ```
 
-To make docker image work properly you need to indicate where credentials and token are located
+### Option 3: Docker
 
 ```bash
-docker run --rm -v $PWD/secrets:/app/secrets:ro gdrive -l
+docker build -t node-gdrive .
+
+# Run with Service Account or OAuth secrets mounted read-only (runs as non-root UID 10001)
+docker run --rm \
+  -v "$(pwd)/secrets:/app/secrets:ro" \
+  -v "$(pwd)/data:/data:ro" \
+  node-gdrive -b /data -z backup.zip -f backups/daily -c -r
 ```
 
-## :checkered_flag: Cli help output
+---
 
-Using docker image from [hub.docker.com](https://hub.docker.com/r/d0whc3r/gdrive)
+## Authentication Setup
+
+### 1. Service Account / ADC (Recommended for CI, Cron & Docker)
+
+1. Create a Service Account in Google Cloud Console with the **Google Drive API** enabled and download its JSON key.
+2. Share the target folder or Shared Drive with the Service Account email.
+3. Point `node-gdrive` to the key via env var or CLI flag:
 
 ```bash
-docker run --rm d0whc3r/gdrive --help
+GOOGLE_APPLICATION_CREDENTIALS=./secrets/service-account.json \
+  node-gdrive -l --drive-id <SHARED_DRIVE_ID>
 ```
 
+### 2. OAuth2 Desktop App (Personal Google Drive / Interactive CLI)
+
+1. Enable the **Google Drive API** in Google Cloud Console and create an **OAuth 2.0 Desktop App** client.
+2. Save the downloaded JSON as `./secrets/credentials.json`.
+3. Run any command (e.g., `node-gdrive -l`) and open the printed URL in your browser.
+4. `node-gdrive` captures the callback on an ephemeral `http://127.0.0.1:<port>/oauth2callback` server (with PKCE `S256` and `state` validation) and saves the token with `0600` permissions to `./secrets/token.json`.
+
+---
+
+## Environment Variables
+
+| Variable                                                                     | Description                                         | Default                      |
+| ---------------------------------------------------------------------------- | --------------------------------------------------- | ---------------------------- |
+| `GOOGLE_APPLICATION_CREDENTIALS`                                             | Path to Service Account JSON key (standard GCP var) | —                            |
+| `SERVICE_ACCOUNT_FILE`                                                       | Alias for Service Account JSON key path             | —                            |
+| `CREDENTIALS_FILE`                                                           | Path to OAuth2 Desktop `credentials.json`           | `./secrets/credentials.json` |
+| `TOKEN_FILE`                                                                 | Path to stored OAuth2 `token.json` (`0600`)         | `./secrets/token.json`       |
+| `BACKUP_ENCRYPTION_KEY`                                                      | Passphrase for `--encrypt` (AES-256-GCM)            | —                            |
+| `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_DATABASE` | MySQL connection for `--mysql`                      | `localhost:3306`             |
+
+See [example.env](./example.env) for a ready-to-copy template.
+
+---
+
+## CLI Reference
+
+### Options
+
+| Flag                       | Alias | Description                                                            |
+| -------------------------- | ----- | ---------------------------------------------------------------------- |
+| `--list`                   | `-l`  | List files and folders                                                 |
+| `--backup <file*>`         | `-b`  | Upload files, directories, or globs (repeatable)                       |
+| `--download <id-or-name>`  | —     | Download a file by ID or name                                          |
+| `--output <path>`          | `-o`  | Local destination path for `--download`                                |
+| `--folder <path>`          | `-f`  | Destination folder path (supports nested paths like `backups/daily`)   |
+| `--zip [filename.zip]`     | `-z`  | Compress backup files into a ZIP archive                               |
+| `--exclude <glob>`         | —     | Exclude files matching glob pattern (repeatable)                       |
+| `--replace`                | `-r`  | Replace existing file in target folder on upload                       |
+| `--create`                 | `-c`  | Create destination folder(s) if they do not exist                      |
+| `--delete <rule>`          | `-d`  | Delete files older than duration (`folder=7d` or `7d`, repeatable)     |
+| `--keep-last <N>`          | —     | Always preserve the N newest matching files when deleting              |
+| `--dry-run`                | —     | Preview uploads/deletions without modifying Drive                      |
+| `--encrypt`                | —     | Encrypt on upload / decrypt on download using `$BACKUP_ENCRYPTION_KEY` |
+| `--stdin`                  | —     | Read upload payload from standard input (requires `--name`)            |
+| `--name <filename>`        | —     | Filename when uploading from `--stdin`                                 |
+| `--mysql`                  | `-m`  | Create and upload a MySQL dump using `$MYSQL_*` env vars               |
+| `--drive-id <id>`          | —     | Target a Google Workspace Shared Drive                                 |
+| `--service-account <path>` | —     | Path to a Service Account JSON key                                     |
+| `--json`                   | —     | Output machine-readable JSON (ideal for CI/scripts)                    |
+| `--quiet`                  | `-q`  | Suppress informational logs                                            |
+| `--version`                | `-v`  | Print CLI version                                                      |
+| `--help`                   | `-h`  | Print usage guide                                                      |
+
+### Common Recipes
+
+```bash
+# 1. List files as JSON
+node-gdrive -l --json
+
+# 2. Backup files/globs to a nested folder (creating missing folders)
+node-gdrive -b "src/*" -b package.json -f backups/app -c -r
+
+# 3. Backup as an encrypted ZIP while excluding logs
+BACKUP_ENCRYPTION_KEY="my-strong-passphrase" \
+  node-gdrive -b "./data/*" --exclude "*.log" -z backup.zip -f backups -c -r --encrypt
+
+# 4. Download and decrypt a backup
+BACKUP_ENCRYPTION_KEY="my-strong-passphrase" \
+  node-gdrive --download backup.zip.enc -f backups -o ./backup.zip --encrypt
+
+# 5. Stream a PostgreSQL dump directly to Google Drive without touching disk
+pg_dump mydb | node-gdrive --stdin --name mydb.sql -f backups/pg -c
+
+# 6. Nightly cron job: MySQL backup + prune older than 14 days while keeping at least 5 backups
+node-gdrive -m -z -f backups/mysql -c --encrypt && \
+  node-gdrive -f backups/mysql -d 14d --keep-last 5
 ```
-Help for gdrive
 
-  Usage of npm gdrive in command line.
+### Valid Duration Units (`-d`)
 
-Options
+| Unit | Meaning | Example |
+| ---- | ------- | ------- |
+| `s`  | Seconds | `30s`   |
+| `m`  | Minutes | `15m`   |
+| `h`  | Hours   | `24h`   |
+| `d`  | Days    | `7d`    |
+| `w`  | Weeks   | `2w`    |
+| `M`  | Months  | `1M`    |
+| `y`  | Years   | `1y`    |
 
-  -l, --list                                     List all files and folders
-  -b, --backup file*                             Backup files
-  -z, --zip zipname.zip                          Zip backup files
-  -r, --replace                                  Replace files if already exists when backup upload
-  -c, --create                                   Create destination upload folder
-  -f, --folder foldername                        Folder name to upload file/s
-  -d, --delete foldername=duration OR duration   Clean files older than duration in foldername
-  -m, --mysql                                    Mysql backup using environment variables to connect mysql server
-                                                 ($MYSQL_USER, $MYSQL_PASSWORD, $MYSQL_DATABASE, $MYSQL_HOST, $MYSQL_PORT)
-  -h, --help                                     Print this usage guide.
+> Invalid units are rejected immediately with a non-zero exit code to prevent accidental deletions.
 
-Examples
+### Exit Codes
 
-  1. List files.                                                                      $ gdrive -l
-  2. Backup multiple files to "backupFolder" folder.                                  $ gdrive -b src/index.ts -b images/logo.png -f backupFolder
-  3. Backup files using wildcard to "backup" folder.                                  $ gdrive -b src/* -b images/* -f backup
-  4. Backup files using wildcard and zip into "zipped" folder folder will be          $ gdrive -b src/* -b images/* -z -f zipped -c
-  created if it doesn't exists.
-  5. Backup files using wildcard and zip using "allfiles.zip" as filename into        $ gdrive -b src/* -b images/* -z allfiles.zip -f zipped -c -r
-  "zipped" folder folder will be created if it doesn't exists and zipfile will be
-  replaced if it exists
-  6. Delete files in "uploads" folder older than 2days and files in "monthly"         $ gdrive -d uploads=2d -d monthly=1M
-  folder older than 1month
-  7. Delete files in "uploads" folder older than 1minute                              $ gdrive -f uploads -d 1m
-  8. Generate mysql dump file zip it and upload to "mysql-backup" folder              $ gdrive -f mysql-backup -m -z
+- `0`: Command succeeded (or `--help` / `--version`).
+- `1`: Runtime or Google Drive API error (authentication, network, missing file, etc.).
+- `2`: Invalid CLI arguments or missing required flags.
+
+---
+
+## Programmatic API (TypeScript / ESM & CJS)
+
+### ESM / TypeScript
+
+```ts
+import { GDrive } from '@d0whc3r/node-gdrive';
+
+const gdrive = new GDrive({
+  serviceAccountFile: './secrets/service-account.json',
+  sharedDriveId: '0AAxxxxxxxxUk9PVA',
+  concurrency: 4
+});
+
+// Upload files with compression, exclusions, and AES-256-GCM encryption
+const uploaded = await gdrive.uploadFiles(['./data/*'], 'backups/daily', {
+  create: true,
+  replace: true,
+  compress: 'daily.zip',
+  exclude: ['*.log', '*.tmp'],
+  encryptKey: process.env.BACKUP_ENCRYPTION_KEY
+});
+
+// Download and decrypt
+await gdrive.downloadFile('daily.zip.enc', './restore/daily.zip', {
+  folderName: 'backups/daily',
+  decryptKey: process.env.BACKUP_ENCRYPTION_KEY
+});
+
+// Retention cleanup: delete files older than 14 days, always keeping the 5 newest
+await gdrive.cleanOlder('14d', 'backups/daily', { keepLast: 5 });
+```
+
+### CommonJS
+
+```js
+const { GDrive } = require('@d0whc3r/node-gdrive');
+
+const gdrive = new GDrive();
+gdrive.listFiles().then((files) => console.log(files));
+```
+
+---
+
+## Development
+
+```bash
+pnpm install
+pnpm lint           # Oxlint
+pnpm format:check   # Oxfmt
+pnpm typecheck      # TypeScript 7
+pnpm test:unit      # Fast offline unit tests (Vitest)
+pnpm test:coverage  # Coverage report
+pnpm build          # Library (CJS/ESM/.d.ts) + CLI + Node 26 SEA binary
 ```
 
 ## License
 
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fd0whc3r%2Fnode-gdrive.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fd0whc3r%2Fnode-gdrive?ref=badge_large)
+MIT

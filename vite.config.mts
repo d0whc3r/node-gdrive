@@ -13,7 +13,7 @@ export default defineConfig({
     lib: {
       entry: 'src/index.ts',
       formats: ['cjs', 'es'],
-      fileName: (format) => (format === 'cjs' ? 'gdrive.cjs.js' : 'gdrive.esm.js')
+      fileName: (format) => (format === 'cjs' ? 'gdrive.cjs.js' : 'gdrive.esm.mjs')
     },
     rolldownOptions: {
       platform: 'node',

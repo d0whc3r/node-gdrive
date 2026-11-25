@@ -1,192 +1,279 @@
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
+import type { Readable } from 'node:stream';
 import { styleText } from 'node:util';
 import dayjs from 'dayjs';
 import mysqldump from 'mysqldump';
 import { GDrive } from '../src';
 import Config from '../src/config';
-import FileUtils from '../src/file.utils';
-import { Schema$File$Modded } from '../src/types';
-import { options } from './cliconfig';
+import type { Logger, Schema$File$Modded } from '../src/types';
+import { GDriveOptions, getUsageGuide, getVersion } from './cliconfig';
+
+function createCliLogger(quiet: boolean): Logger {
+  if (!quiet) {
+    return console;
+  }
+  return {
+    info: () => {},
+    warn: () => {},
+    error: (...args: unknown[]) => console.error(...args)
+  };
+}
 
 export class Cli {
-  constructor(
-    private opts = options,
-    private gdrive = new GDrive()
-  ) {}
+  private readonly logger: Logger;
+  private readonly gdrive: GDrive;
 
-  async parseOptions() {
-    for (const command in this.opts) {
-      if (Object.hasOwn(this.opts, command)) {
-        const args = this.opts[command] as string | string[];
-        const zip = this.opts['zip'];
-        const folder = this.opts['folder'];
-        const replace = this.opts['replace'];
-        const create = this.opts['create'];
-        switch (command) {
-          case 'backup':
-            await this.backup(args, { zip, folder, replace, create });
-            break;
-          case 'delete':
-            await this.delete(args, folder);
-            break;
-          case 'mysql':
-            await this.dumpMysql({ zip, folder, replace, create });
-            break;
-          case 'list':
-            await this.showList();
-            break;
-        }
-      }
+  constructor(
+    private readonly opts: GDriveOptions,
+    gdrive?: GDrive,
+    logger?: Logger
+  ) {
+    const silentLogs = Boolean(opts.quiet || opts.json);
+    this.logger = logger ?? createCliLogger(silentLogs);
+    this.gdrive =
+      gdrive ??
+      new GDrive({
+        sharedDriveId: opts['drive-id'],
+        serviceAccountFile: opts['service-account'],
+        dryRun: opts['dry-run'],
+        logger: this.logger
+      });
+  }
+
+  private getEncryptionKey(): string | undefined {
+    if (!this.opts.encrypt) {
+      return undefined;
+    }
+    const key = Config.BACKUP_ENCRYPTION_KEY;
+    if (!key) {
+      throw new Error(`${Config.TAG} --encrypt requires BACKUP_ENCRYPTION_KEY environment variable to be set.`);
+    }
+    return key;
+  }
+
+  async parseOptions(stdinStream: Readable = process.stdin): Promise<void> {
+    if (this.opts.version) {
+      console.info(getVersion());
+      return;
+    }
+
+    if (this.opts.help || Object.keys(this.opts).length === 0) {
+      console.info(getUsageGuide());
+      return;
+    }
+
+    const zip = this.opts.zip;
+    const folder = this.opts.folder;
+    const replace = this.opts.replace;
+    const create = this.opts.create;
+    const dryRun = this.opts['dry-run'];
+    const exclude = this.opts.exclude;
+
+    if (this.opts.list) {
+      await this.showList();
+    }
+    if (this.opts.backup) {
+      await this.backup(this.opts.backup, { zip, folder, replace, create, dryRun, exclude });
+    }
+    if (this.opts.stdin) {
+      await this.uploadFromStdin(stdinStream, this.opts.name!, { folder, replace, create, dryRun });
+    }
+    if (this.opts.download) {
+      await this.download(this.opts.download, this.opts.output, folder);
+    }
+    if (this.opts.delete) {
+      await this.delete(this.opts.delete, folder, { dryRun, keepLast: this.opts['keep-last'] });
+    }
+    if (this.opts.mysql) {
+      await this.dumpMysql({ zip, folder, replace, create, dryRun });
     }
   }
 
-  async showList() {
+  async showList(): Promise<Schema$File$Modded[]> {
     const files = (await this.gdrive.listFiles()).filter((file) => !file.isDeleted);
+    if (this.opts.json) {
+      console.info(JSON.stringify(files, null, 2));
+      return files;
+    }
     if (files.length) {
-      console.info(`${Config.TAG} File list: ${files.length}`);
+      this.logger.info(`${Config.TAG} File list: ${files.length}`);
       this.beautifulFiles(files);
     } else {
-      console.info(`${Config.TAG} No files found.`);
+      this.logger.info(`${Config.TAG} No files found.`);
     }
+    return files;
   }
 
-  async delete(args: string | string[], folder?: string) {
-    if (!Array.isArray(args)) {
-      args = [args];
-    }
-    const parsed = args
-      .map((x) => this.parseDelete(x))
-      .map((arg) => {
-        if (!arg.folder) {
-          arg.folder = folder || null;
-        }
-        return {
-          ...arg
-        };
+  async delete(args: string | string[], folder?: string, options: { dryRun?: boolean; keepLast?: number } = {}): Promise<Schema$File$Modded[]> {
+    const list = Array.isArray(args) ? args : [args];
+    const parsed = list.map((x) => {
+      const item = this.parseDelete(x);
+      return {
+        folder: item.folder ?? folder ?? undefined,
+        timeSpace: item.timeSpace
+      };
+    });
+
+    const deleted: Schema$File$Modded[] = [];
+    for (const info of parsed) {
+      const removed = await this.gdrive.cleanOlder(info.timeSpace, info.folder, {
+        dryRun: options.dryRun,
+        keepLast: options.keepLast
       });
-    try {
-      for (const info of parsed) {
-        const { folder: folderName, timeSpace } = info;
-        await this.gdrive.cleanOlder(timeSpace, folderName || undefined);
-      }
-    } catch {
-      console.error(`${Config.TAG} Error in delete files`);
+      deleted.push(...removed);
     }
+
+    if (this.opts.json) {
+      console.info(JSON.stringify(deleted, null, 2));
+    }
+    return deleted;
   }
 
-  async backup(files: string | string[], opts: { zip?: string; folder?: string; replace?: boolean; create?: boolean }) {
-    const { zip, folder, replace, create } = opts;
-    if (!Array.isArray(files)) {
-      files = [files];
-    }
-    await this.gdrive.uploadFiles(files, folder || false, {
+  async backup(
+    files: string | string[],
+    opts: { zip?: string | null; folder?: string; replace?: boolean; create?: boolean; dryRun?: boolean; exclude?: string[] }
+  ): Promise<Record<string, Schema$File$Modded>> {
+    const { zip, folder, replace, create, dryRun, exclude } = opts;
+    const encryptKey = this.getEncryptionKey();
+    const list = Array.isArray(files) ? files : [files];
+    const uploaded = await this.gdrive.uploadFiles(list, folder || false, {
       compress: zip || zip === null,
       replace,
-      create
+      create,
+      dryRun,
+      encryptKey,
+      exclude
     });
-  }
-
-  async dumpMysql(opts: { zip?: string; folder?: string; replace?: boolean; create?: boolean }) {
-    let mysqlfile = '';
-    try {
-      mysqlfile = await this.createDumpFile();
-    } catch (err) {
-      console.error(styleText(['bold', 'red'], `${Config.TAG} Error mysql ${String(err)}`));
-      process.exit(-1);
+    if (this.opts.json) {
+      console.info(JSON.stringify(uploaded, null, 2));
     }
-    await this.backup(mysqlfile, opts);
+    return uploaded;
   }
 
-  private parseDelete(arg: string) {
-    let folder: string | null;
-    let timeSpace: string;
-    const parsed = arg.split('=');
-    if (parsed.length > 1) {
-      folder = parsed[0];
-      timeSpace = parsed[1];
+  async uploadFromStdin(
+    stream: Readable,
+    fileName: string,
+    opts: { folder?: string; replace?: boolean; create?: boolean; dryRun?: boolean }
+  ): Promise<Schema$File$Modded> {
+    const encryptKey = this.getEncryptionKey();
+    const uploaded = await this.gdrive.uploadStream(stream, fileName, opts.folder || false, {
+      replace: opts.replace,
+      create: opts.create,
+      dryRun: opts.dryRun,
+      encryptKey
+    });
+    if (this.opts.json) {
+      console.info(JSON.stringify(uploaded, null, 2));
+    }
+    return uploaded;
+  }
+
+  async download(fileIdOrName: string, outputPath?: string, folderName?: string): Promise<string> {
+    const decryptKey = this.getEncryptionKey();
+    const defaultOutput = decryptKey && fileIdOrName.endsWith('.enc') ? fileIdOrName.slice(0, -4) : path.basename(fileIdOrName);
+    const destPath = outputPath ?? defaultOutput;
+    const saved = await this.gdrive.downloadFile(fileIdOrName, destPath, {
+      decryptKey,
+      folderName
+    });
+    if (this.opts.json) {
+      console.info(JSON.stringify({ downloaded: saved }, null, 2));
     } else {
-      timeSpace = arg;
-      folder = null;
+      this.logger.info(`${Config.TAG} Downloaded to ${saved}`);
+    }
+    return saved;
+  }
+
+  async dumpMysql(opts: {
+    zip?: string | null;
+    folder?: string;
+    replace?: boolean;
+    create?: boolean;
+    dryRun?: boolean;
+  }): Promise<Record<string, Schema$File$Modded>> {
+    const { dumpPath, tempDir } = await this.createDumpFile();
+    try {
+      return await this.backup(dumpPath, opts);
+    } finally {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    }
+  }
+
+  private parseDelete(arg: string): { folder: string | null; timeSpace: string } {
+    const idx = arg.lastIndexOf('=');
+    if (idx > 0) {
+      return {
+        folder: arg.slice(0, idx),
+        timeSpace: arg.slice(idx + 1)
+      };
     }
     return {
-      folder,
-      timeSpace
+      folder: null,
+      timeSpace: arg
     };
   }
 
-  private findFile(files: Schema$File$Modded[], fileId?: string | null) {
-    const result = files.find((file) => file.id === fileId);
-    if (result) {
-      return result.name;
-    } else {
-      return null;
+  private beautifulFiles(files: Schema$File$Modded[]): void {
+    const idToName = new Map<string, string>();
+    for (const file of files) {
+      if (file.id && file.name) {
+        idToName.set(file.id, file.name);
+      }
     }
-  }
 
-  private beautifulFiles(files: Schema$File$Modded[]) {
     const parsed = files.map((file) => {
-      const fileId = file && file.parents && file.parents[0];
+      const parentId = file.parents?.[0];
       return {
         ...file,
-        parentFolder: this.findFile(files, fileId)
+        parentFolder: parentId ? idToName.get(parentId) : undefined
       } as Schema$File$Modded;
     });
-    parsed.sort((a, b) => this.sortByName(a, b));
-    parsed.sort((a, b) => this.sortByParent(a, b));
-    parsed.sort((a, b) => this.sortByFolder(a, b));
-    parsed.forEach((file) => {
+
+    parsed.sort((a, b) => {
+      if (a.isFolder !== b.isFolder) {
+        return a.isFolder ? -1 : 1;
+      }
+      const aHasParent = Boolean(a.parentFolder);
+      const bHasParent = Boolean(b.parentFolder);
+      if (aHasParent !== bHasParent) {
+        return aHasParent ? -1 : 1;
+      }
+      if (a.parentFolder && b.parentFolder && a.parentFolder !== b.parentFolder) {
+        return a.parentFolder.localeCompare(b.parentFolder);
+      }
+      return (a.name ?? '').localeCompare(b.name ?? '');
+    });
+
+    for (const file of parsed) {
       const fileName = file.isFolder ? this.showFolder(file.name) : file.name;
       const parent = file.parentFolder ? this.showFolder(`${file.parentFolder}/`) : '';
-      console.info(`${parent}${fileName || ''}`);
-    });
-  }
-
-  private sortByName(a: Schema$File$Modded, b: Schema$File$Modded) {
-    if (a.name && b.name) {
-      return a.name.localeCompare(b.name);
-    }
-    return 0;
-  }
-
-  private sortByFolder(a: Schema$File$Modded, b: Schema$File$Modded) {
-    if (a.isFolder && !b.isFolder) {
-      return -1;
-    } else if (!a.isFolder && b.isFolder) {
-      return 1;
-    }
-    return 0;
-  }
-
-  private sortByParent(a: Schema$File$Modded, b: Schema$File$Modded) {
-    if ((a.parentFolder && b.parentFolder) || (!a.parentFolder && !b.parentFolder)) {
-      return 0;
-    } else if (!a.parentFolder && b.parentFolder) {
-      return 1;
-    } else {
-      return -1;
+      this.logger.info(`${parent}${fileName || ''}`);
     }
   }
 
-  private showFolder(name?: string | null) {
+  private showFolder(name?: string | null): string {
     if (!name) {
       return '';
     }
     return styleText(['bold', 'cyan'], name);
   }
 
-  private createDumpFile(): Promise<string> {
+  private async createDumpFile(): Promise<{ dumpPath: string; tempDir: string }> {
     const host = process.env.MYSQL_HOST || 'localhost';
-    const port = +(process.env.MYSQL_PORT || 3306);
+    const port = Number(process.env.MYSQL_PORT || 3306);
     const user = process.env.MYSQL_USER || '';
     const password = process.env.MYSQL_PASSWORD || '';
     const database = process.env.MYSQL_DATABASE || '';
+
     if (!user || !password || !database) {
-      console.error(`${Config.TAG} Error in mysql-dump environment variables not defined`);
-      console.error('$MYSQL_USER, $MYSQL_PASSWORD, $MYSQL_DATABASE, $MYSQL_HOST, $MYSQL_PORT');
-      process.exit(-1);
+      throw new Error(
+        `${Config.TAG} Missing required MySQL environment variables ($MYSQL_USER, $MYSQL_PASSWORD, $MYSQL_DATABASE, $MYSQL_HOST, $MYSQL_PORT)`
+      );
     }
-    return mysqldump({
+
+    const { dump } = await mysqldump({
       connection: {
         host,
         port,
@@ -194,14 +281,16 @@ export class Cli {
         password,
         database
       }
-    }).then(({ dump }) => {
-      const fileDest = `./files/mysqldump-${dayjs().format('YYYY-MM-DD.HHmmss')}.sql`;
-      FileUtils.mkdirp(path.dirname(fileDest));
-      const content = Object.values(dump)
-        .map((result) => result && result.replace(/^# /gm, '-- '))
-        .join('\n\n');
-      fs.writeFileSync(fileDest, content);
-      return fileDest;
     });
+
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'node-gdrive-mysql-'));
+    fs.chmodSync(tempDir, 0o700);
+    const dumpPath = path.join(tempDir, `mysqldump-${dayjs().format('YYYY-MM-DD.HHmmss')}.sql`);
+    const content = Object.values(dump)
+      .filter((section): section is string => Boolean(section))
+      .map((result) => result.replace(/^# /gm, '-- '))
+      .join('\n\n');
+    fs.writeFileSync(dumpPath, content, { mode: 0o600 });
+    return { dumpPath, tempDir };
   }
 }

@@ -166,6 +166,9 @@ importers:
 
   .:
     dependencies:
+      '@googleapis/drive':
+        specifier: ^27.1.0
+        version: 27.1.0(supports-color@7.2.0)
       archiver:
         specifier: ^8.0.0
         version: 8.0.0(bare-buffer@3.7.3)
@@ -178,9 +181,9 @@ importers:
       dayjs:
         specifier: ^1.11.23
         version: 1.11.23
-      googleapis:
-        specifier: ^190.0.0
-        version: 190.0.0(supports-color@7.2.0)
+      google-auth-library:
+        specifier: ^11.3.4
+        version: 11.3.4(supports-color@7.2.0)
       mime-types:
         specifier: ^3.0.2
         version: 3.0.2
@@ -391,6 +394,10 @@ packages:
 
   '@emnapi/wasi-threads@2.2.0':
     resolution: {integrity: sha512-JP7OYH38Q7+pyTAe14raZHLQIK7BDKbdwji+Xi3pcd/6QkJYQH3SX4wu6EplGrGJWRepoNzedfm0G3B9Z4e9Rw==}
+
+  '@googleapis/drive@27.1.0':
+    resolution: {integrity: sha512-z+CMvbc9vBE/M3C2GtYI4JVUre/BWkr5UM1z/Qtun+NTVWmd8KKM+ZGAOj5Jv8XWjPEwmV438HlX8Kc3pz8qiw==}
+    engines: {node: '>=22.0.0'}
 
   '@jridgewell/resolve-uri@3.1.3':
     resolution: {integrity: sha512-lhTtjtoEArWBjismtfS761S9Hlyn+nIZqOZVYoZ1Xn82PMNMVnk+jj/NhC4fAXGTs7ydONcJiR5vyQBTMDu27g==}
@@ -1703,10 +1710,6 @@ packages:
   googleapis-common@9.3.1:
     resolution: {integrity: sha512-wtv/e7JYgmtpIPcSez2EFD/Wx49DPsRX2rj15D7hTwc7tDsP82dcwoX/I4+zE38mu6S9PcghizzzADLf+ZMunA==}
     engines: {node: '>=22'}
-
-  googleapis@190.0.0:
-    resolution: {integrity: sha512-/1dTKpv9epj6RPMsrlKdyNtby1flh+d39rCWYCU+6bY4RHgZUPYB+B9cRKYsBqqTWyfBkHum0NCthIWJROcUjw==}
-    engines: {node: '>=22.0.0'}
 
   gopd@1.2.0:
     resolution: {integrity: sha512-ZUKRh6/kUFoAiTAtTYPZJ3hw9wNxx+BIBOijnlG9PnrJsCcSjs1wyyD6vJpaYtgnzDrKYRSqf3OO6Rfa93xsRg==}
@@ -3209,6 +3212,12 @@ snapshots:
       tslib: 2.9.1
     optional: true
 
+  '@googleapis/drive@27.1.0(supports-color@7.2.0)':
+    dependencies:
+      googleapis-common: 9.3.1(supports-color@7.2.0)
+    transitivePeerDependencies:
+      - supports-color
+
   '@jridgewell/resolve-uri@3.1.3': {}
 
   '@jridgewell/sourcemap-codec@1.6.0': {}
@@ -4392,13 +4401,6 @@ snapshots:
       google-logging-utils: 2.2.0
       qs: 6.17.1
       url-template: 2.0.8
-    transitivePeerDependencies:
-      - supports-color
-
-  googleapis@190.0.0(supports-color@7.2.0):
-    dependencies:
-      google-auth-library: 11.3.4(supports-color@7.2.0)
-      googleapis-common: 9.3.1(supports-color@7.2.0)
     transitivePeerDependencies:
       - supports-color
 

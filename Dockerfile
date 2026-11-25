@@ -18,8 +18,14 @@ FROM debian:bookworm-slim
 ENV TOKEN_FILE=/app/secrets/token.json
 ENV CREDENTIALS_FILE=/app/secrets/credentials.json
 
-COPY --from=builder /app/node-gdrive /app/node-gdrive
-RUN chmod +x /app/node-gdrive
+RUN useradd --uid 10001 --create-home --shell /usr/sbin/nologin appuser && \
+    mkdir -p /app/secrets && \
+    chown -R appuser:appuser /app
+
+COPY --from=builder --chown=appuser:appuser /app/node-gdrive /app/node-gdrive
+RUN chmod 0755 /app/node-gdrive
+
 WORKDIR /app
+USER 10001
 
 ENTRYPOINT ["/app/node-gdrive"]

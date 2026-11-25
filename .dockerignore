@@ -1,6 +1,12 @@
+.git
 node_modules
 dist
 bin
+coverage
+files/
+*.sql
+node-gdrive
+node-gdrive.exe
 tests
 types
 secrets

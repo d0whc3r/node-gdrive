@@ -15,8 +15,9 @@ const seaConfig = {
   useCodeCache: true
 };
 
-const tmpConfig = path.join(os.tmpdir(), `sea-config-gdrive-${process.pid}.json`);
-fs.writeFileSync(tmpConfig, JSON.stringify(seaConfig, null, 2));
+const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sea-config-gdrive-'));
+const tmpConfig = path.join(tmpDir, 'sea-config.json');
+fs.writeFileSync(tmpConfig, JSON.stringify(seaConfig, null, 2), { mode: 0o600 });
 
 try {
   execFileSync(process.execPath, ['--build-sea', tmpConfig], { stdio: 'inherit' });
@@ -24,5 +25,5 @@ try {
     execFileSync('codesign', ['--sign', '-', output], { stdio: 'inherit' });
   }
 } finally {
-  fs.rmSync(tmpConfig, { force: true });
+  fs.rmSync(tmpDir, { recursive: true, force: true });
 }

@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [master]
 
+permissions:
+  contents: read
+
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -22,6 +25,11 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm build:base
       - run: pnpm test:coverage
+        env:
+          CI: true
+      - name: Integration tests (master push only)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        run: pnpm test:integration
         env:
           CI: true
           CREDENTIALS_JSON: ${{ secrets.CREDENTIALS_JSON }}

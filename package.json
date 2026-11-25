@@ -30,12 +30,12 @@
     "bin"
   ],
   "main": "dist/gdrive.cjs.js",
-  "module": "dist/gdrive.esm.js",
+  "module": "dist/gdrive.esm.mjs",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/gdrive.esm.js",
+      "import": "./dist/gdrive.esm.mjs",
       "require": "./dist/gdrive.cjs.js"
     }
   },
@@ -45,7 +45,6 @@
   },
   "scripts": {
     "clean": "node -e \"import('node:fs').then(fs => ['dist','bin','build','coverage','node-gdrive','node-gdrive.exe'].forEach(p => fs.rmSync(p, {recursive:true,force:true})))\"",
-    "dev": "node --env-file=.env src/test.ts",
     "cli:dev": "node --env-file=.env cli/cli.ts",
     "cli": "node cli/cli.ts",
     "typecheck": "tsc --noEmit",
@@ -57,6 +56,8 @@
     "build:sea": "vite build --config vite.sea.config.mts && node scripts/build-sea.mjs",
     "build": "pnpm build:base && pnpm build:sea",
     "test": "vitest run",
+    "test:unit": "vitest run --exclude tests/gdrive.integration.spec.ts",
+    "test:integration": "vitest run tests/gdrive.integration.spec.ts",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "lint": "oxlint",
@@ -68,11 +69,12 @@
     "postversion": "git commit -am 'chore(bump): bump version [skip-ci]' && git push --follow-tags"
   },
   "dependencies": {
+    "@googleapis/drive": "^27.1.0",
     "archiver": "^8.0.0",
     "command-line-args": "^6.0.2",
     "command-line-usage": "^7.0.4",
     "dayjs": "^1.11.23",
-    "googleapis": "^190.0.0",
+    "google-auth-library": "^11.3.4",
     "mime-types": "^3.0.2",
     "mysqldump": "^3.2.0"
   },

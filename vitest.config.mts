@@ -7,7 +7,8 @@ export default defineConfig({
     testTimeout: 35_000,
     coverage: {
       provider: 'v8',
-      include: ['src/**/*.ts'],
+      include: ['src/**/*.ts', 'cli/**/*.ts'],
+      exclude: ['cli/cli.ts', 'src/types.ts'],
       reporter: ['text', 'lcov']
     }
   }

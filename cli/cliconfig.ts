@@ -1,7 +1,8 @@
 import commandLineArgs, { CommandLineOptions } from 'command-line-args';
 import commandLineUsage, { OptionDefinition, Section } from 'command-line-usage';
+import pkg from '../package.json' with { type: 'json' };
 
-const optionDefinitions: OptionDefinition[] = [
+export const optionDefinitions: OptionDefinition[] = [
   {
     name: 'list',
     alias: 'l',
@@ -12,11 +13,26 @@ const optionDefinitions: OptionDefinition[] = [
   {
     name: 'backup',
     alias: 'b',
-    typeLabel: '{underline file*} ',
+    typeLabel: '{underline file*}',
     defaultOption: true,
     multiple: true,
     type: String,
-    description: 'Backup files'
+    description: 'Backup files, directories, or globs'
+  },
+  {
+    name: 'download',
+    typeLabel: '{underline fileId|name}',
+    multiple: false,
+    type: String,
+    description: 'Download/restore a file from Google Drive'
+  },
+  {
+    name: 'output',
+    alias: 'o',
+    typeLabel: '{underline path}',
+    multiple: false,
+    type: String,
+    description: 'Local destination path for --download'
   },
   {
     name: 'zip',
@@ -24,21 +40,21 @@ const optionDefinitions: OptionDefinition[] = [
     typeLabel: '{underline zipname.zip}',
     multiple: false,
     type: String,
-    description: 'Zip backup files'
+    description: 'Zip backup files before uploading'
   },
   {
     name: 'replace',
     alias: 'r',
     multiple: false,
     type: Boolean,
-    description: 'Replace files if already exists when backup upload'
+    description: 'Replace files if already exists when uploading'
   },
   {
     name: 'create',
     alias: 'c',
     multiple: false,
     type: Boolean,
-    description: 'Create destination upload folder'
+    description: 'Create destination upload folder if missing'
   },
   {
     name: 'folder',
@@ -46,58 +62,139 @@ const optionDefinitions: OptionDefinition[] = [
     typeLabel: '{underline foldername}',
     multiple: false,
     type: String,
-    description: 'Folder name to upload file/s'
+    description: 'Destination or target folder path (supports nested paths like a/b/c)'
   },
   {
     name: 'delete',
     alias: 'd',
-    typeLabel: '{underline foldername=duration} OR {underline duration}',
+    typeLabel: '{underline folder=duration} OR {underline duration}',
     multiple: true,
     type: String,
-    description: 'Clean files older than duration in foldername'
+    description: 'Clean files older than duration (e.g. 7d, 1M, 30m)'
+  },
+  {
+    name: 'keep-last',
+    typeLabel: '{underline N}',
+    multiple: false,
+    type: Number,
+    description: 'Always keep the newest N files when cleaning older files'
   },
   {
     name: 'mysql',
     alias: 'm',
     multiple: false,
     type: Boolean,
-    description:
-      'Mysql backup using environment variables to connect mysql server ($MYSQL_USER, $MYSQL_PASSWORD, $MYSQL_DATABASE, $MYSQL_HOST, $MYSQL_PORT)'
+    description: 'MySQL backup using environment variables ($MYSQL_USER, $MYSQL_PASSWORD, $MYSQL_DATABASE, $MYSQL_HOST, $MYSQL_PORT)'
+  },
+  {
+    name: 'stdin',
+    multiple: false,
+    type: Boolean,
+    description: 'Read upload content from stdin (requires --name)'
+  },
+  {
+    name: 'name',
+    typeLabel: '{underline filename}',
+    multiple: false,
+    type: String,
+    description: 'Target filename when uploading from --stdin'
+  },
+  {
+    name: 'encrypt',
+    multiple: false,
+    type: Boolean,
+    description: 'Encrypt uploads / decrypt downloads with AES-256-GCM using $BACKUP_ENCRYPTION_KEY'
+  },
+  {
+    name: 'exclude',
+    typeLabel: '{underline glob}',
+    multiple: true,
+    type: String,
+    description: 'Exclude glob pattern(s) when backing up files'
+  },
+  {
+    name: 'dry-run',
+    multiple: false,
+    type: Boolean,
+    description: 'Preview uploads or deletions without modifying Google Drive'
+  },
+  {
+    name: 'drive-id',
+    typeLabel: '{underline id}',
+    multiple: false,
+    type: String,
+    description: 'Google Shared Drive ID'
+  },
+  {
+    name: 'service-account',
+    typeLabel: '{underline path}',
+    multiple: false,
+    type: String,
+    description: 'Path to Google Service Account JSON key file'
+  },
+  {
+    name: 'json',
+    multiple: false,
+    type: Boolean,
+    description: 'Output command results as JSON'
+  },
+  {
+    name: 'quiet',
+    alias: 'q',
+    multiple: false,
+    type: Boolean,
+    description: 'Suppress non-essential log output'
+  },
+  {
+    name: 'version',
+    alias: 'v',
+    multiple: false,
+    type: Boolean,
+    description: 'Print version number'
   },
   {
     name: 'help',
     alias: 'h',
-    description: 'Print this usage guide.',
+    description: 'Print this usage guide',
     type: Boolean
   }
 ];
 
 export interface GDriveOptions extends CommandLineOptions {
   help?: boolean;
+  version?: boolean;
   list?: boolean;
   backup?: string | string[];
+  download?: string;
+  output?: string;
   folder?: string;
-  zip?: string;
+  zip?: string | null;
   create?: boolean;
   replace?: boolean;
-  delete?: string;
+  delete?: string | string[];
+  'keep-last'?: number;
   mysql?: boolean;
+  stdin?: boolean;
+  name?: string;
+  encrypt?: boolean;
+  exclude?: string[];
+  'dry-run'?: boolean;
+  'drive-id'?: string;
+  'service-account'?: string;
+  json?: boolean;
+  quiet?: boolean;
 }
 
-let options: GDriveOptions = {};
-try {
-  options = commandLineArgs(optionDefinitions);
-} catch (e) {
-  console.error('[-] Error:', e instanceof Error ? e.message : String(e));
-  process.exit(1);
+export function getVersion(): string {
+  return pkg.version;
 }
 
-if (options.help || !Object.keys(options).length) {
+export function getUsageGuide(): string {
   const ex = 'node-gdrive';
   const sections: Section[] = [
     {
-      header: `Help for ${ex}`,
-      content: `Usage of npm {italic ${ex}} in command line.`
+      header: `Help for ${ex} v${pkg.version}`,
+      content: `Usage of {italic ${ex}} in command line.`
     },
     {
       header: 'Options',
@@ -107,42 +204,52 @@ if (options.help || !Object.keys(options).length) {
       header: 'Examples',
       content: [
         {
-          desc: '1. List files.',
-          example: `$ ${ex} -l`
+          desc: '1. List files (or JSON output).',
+          example: `$ ${ex} -l --json`
         },
         {
-          desc: '2. Backup multiple files to "backupFolder" folder.',
-          example: `$ ${ex} -b src/index.ts -b images/logo.png -f backupFolder`
+          desc: '2. Backup multiple files to nested folder.',
+          example: `$ ${ex} -b src/index.ts -b images/logo.png -f backups/app -c`
         },
         {
-          desc: '3. Backup files using wildcard to "backup" folder.',
-          example: `$ ${ex} -b src/* -b images/* -f backup`
+          desc: '3. Backup files as encrypted zip excluding logs.',
+          example: `$ BACKUP_ENCRYPTION_KEY=secret ${ex} -b ./data/* --exclude "*.log" -z backup.zip -f backups -c -r --encrypt`
         },
         {
-          desc: '4. Backup files using wildcard and zip into "zipped" folder, folder will be created if it doesn\'t exists.',
-          example: `$ ${ex} -b src/* -b images/* -z -f zipped.zip -c`
+          desc: '4. Stream stdin directly to Google Drive.',
+          example: `$ pg_dump mydb | ${ex} --stdin --name mydb.sql -f backups/pg -c`
         },
         {
-          desc: '5. Backup files using wildcard and zip using "allfiles.zip" as filename into "zipped" folder, folder will be created if it doesn\'t exists and zipfile will be replaced if it exists',
-          example: `$ ${ex} -b src/* -b images/* -z allfiles.zip -f zipped -c -r`
+          desc: '5. Download and decrypt a backup.',
+          example: `$ BACKUP_ENCRYPTION_KEY=secret ${ex} --download backup.zip.enc -f backups -o ./backup.zip --encrypt`
         },
         {
-          desc: '6. Delete files in "uploads" folder older than 2days and files in "monthly" folder older than 1month',
-          example: `$ ${ex} -d uploads=2d -d monthly=1M`
+          desc: '6. Clean files older than 7 days while keeping the 5 newest (dry run).',
+          example: `$ ${ex} -f backups -d 7d --keep-last 5 --dry-run`
         },
         {
-          desc: '7. Delete files in "uploads" folder older than 1minute',
-          example: `$ ${ex} -f uploads -d 1m`
-        },
-        {
-          desc: '8. Generate mysql dump file zip it and upload to "mysql-backup" folder',
-          example: `$ ${ex} -f mysql-backup -m -z`
+          desc: '7. Generate MySQL dump, zip, and upload to "mysql-backup" folder.',
+          example: `$ ${ex} -f mysql-backup -m -z -c`
         }
       ]
     }
   ];
-  console.info(commandLineUsage(sections));
-  process.exit(0);
+  return commandLineUsage(sections);
 }
 
-export { options };
+export function parseCliArgs(argv?: string[]): GDriveOptions {
+  const parsed = commandLineArgs(optionDefinitions, argv ? { argv } : undefined) as GDriveOptions;
+
+  if (parsed['keep-last'] !== undefined) {
+    const keepLast = parsed['keep-last'];
+    if (!Number.isInteger(keepLast) || keepLast < 0) {
+      throw new Error(`Invalid --keep-last value "${String(keepLast)}": expected a non-negative integer.`);
+    }
+  }
+
+  if (parsed.stdin && !parsed.name) {
+    throw new Error('Option --stdin requires --name <filename>.');
+  }
+
+  return parsed;
+}
