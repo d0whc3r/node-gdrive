@@ -1,3 +1,20 @@
+# Changelog
+
+# [3.5.0](https://github.com/d0whc3r/node-gdrive/compare/v3.4.1...v3.5.0) (2026-11-25)
+
+
+### Bug Fixes
+
+* **ci:** create secrets directory before writing test credentials ([1b83888](https://github.com/d0whc3r/node-gdrive/commit/1b838888fe8cf8843739ebc84a64747ca292df9e))
+* **ci:** remove legacy postversion script breaking semantic-release ([d8cb0f9](https://github.com/d0whc3r/node-gdrive/commit/d8cb0f9f3e86de0e8ae36748494770d6c752b27e))
+* deduplicate concurrent folder creation in uploadFiles ([337950d](https://github.com/d0whc3r/node-gdrive/commit/337950d4cab5df9b49c17229770b0acb7a4f9594))
+* update dependencies ([0601937](https://github.com/d0whc3r/node-gdrive/commit/0601937cc3b5f4bb9b5260abf8a0ae6645e78870))
+
+
+### Features
+
+* harden security, use @googleapis/drive, add encryption & tests ([a72c1d5](https://github.com/d0whc3r/node-gdrive/commit/a72c1d51a1b4fce8b60f5f87b5ae8c05bed17400))
+
 ## [3.4.1](https://github.com/d0whc3r/node-gdrive/compare/v3.4.0...v3.4.1) (2020-07-17)
 
 ### Bug Fixes
