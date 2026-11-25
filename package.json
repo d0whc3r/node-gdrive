@@ -65,8 +65,7 @@
     "format": "oxfmt --write",
     "format:check": "oxfmt --check",
     "prepare": "husky",
-    "semantic-release": "semantic-release",
-    "postversion": "git commit -am 'chore(bump): bump version [skip-ci]' && git push --follow-tags"
+    "semantic-release": "semantic-release"
   },
   "dependencies": {
     "@googleapis/drive": "^27.1.0",
