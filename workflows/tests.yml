@@ -5,13 +5,12 @@ name: Node.js CI
 
 on:
   push:
-    branches: [ master ]
+    branches: [master]
   pull_request:
-    branches: [ master ]
+    branches: [master]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     strategy:
@@ -19,20 +18,20 @@ jobs:
         node-version: [12.x, 14.x]
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v1
-      env:
-        CI: true
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}
-        CODECOVS_TOKEN: ${{ secrets.CODECOVS_TOKEN }}
-        COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
-        CREDENTIALS_JSON: ${{ secrets.CREDENTIALS_JSON }}
-        DELETE_ALL_FILES: ${{ secrets.DELETE_ALL_FILES }}
-        TOKEN_JSON: ${{ secrets.TOKEN_JSON }}
-      with:
-        node-version: ${{ matrix.node-version }}
-    - run: yarn install
-    - run: yarn build
-    - run: yarn test:coverage
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        env:
+          CI: true
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}
+          CODECOVS_TOKEN: ${{ secrets.CODECOVS_TOKEN }}
+          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+          CREDENTIALS_JSON: ${{ secrets.CREDENTIALS_JSON }}
+          DELETE_ALL_FILES: ${{ secrets.DELETE_ALL_FILES }}
+          TOKEN_JSON: ${{ secrets.TOKEN_JSON }}
+        with:
+          node-version: ${{ matrix.node-version }}
+      - run: yarn install
+      - run: yarn build
+      - run: yarn test:coverage

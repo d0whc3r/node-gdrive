@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm format:check
+      - run: pnpm typecheck
+      - run: pnpm build:base
+      - run: pnpm test:coverage
+        env:
+          CI: true
+          CREDENTIALS_JSON: ${{ secrets.CREDENTIALS_JSON }}
+          DELETE_ALL_FILES: ${{ secrets.DELETE_ALL_FILES }}
+          TOKEN_JSON: ${{ secrets.TOKEN_JSON }}
+
+  build-sea:
+    needs: verify
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact: node-gdrive-linux-x64
+            binary: node-gdrive
+          - os: macos-latest
+            artifact: node-gdrive-macos-arm64
+            binary: node-gdrive
+          - os: windows-latest
+            artifact: node-gdrive-win-x64.exe
+            binary: node-gdrive.exe
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build:sea
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.binary }}

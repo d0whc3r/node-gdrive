@@ -1,13 +1,14 @@
+import fs, { ReadStream } from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { ZipArchive } from 'archiver';
+import dayjs, { ManipulateType } from 'dayjs';
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore.js';
 import { drive_v3, google } from 'googleapis';
-import fs, { ReadStream } from 'fs';
 import mime from 'mime-types';
-import path from 'path';
-import Config from './config';
-import archiver from 'archiver';
-import FileUtils from './file.utils';
-import moment from 'moment';
-import glob from 'glob';
 import Auth from './auth';
+import Config from './config';
+import FileUtils from './file.utils';
 import {
   allFileTypes,
   FieldsType,
@@ -18,8 +19,8 @@ import {
   UploadOptions,
   UploadOptionsBasic
 } from './types';
-import os from 'os';
-import { Socket } from 'net';
+
+dayjs.extend(isSameOrBefore);
 
 export class GDrive {
   public readonly DEFAULT_FIELDS: FieldsType[] = ['createdTime', 'id', 'md5Checksum', 'mimeType', 'name', 'parents', 'trashed'];
@@ -46,14 +47,14 @@ export class GDrive {
   }
 
   public isFolder(file: drive_v3.Schema$File) {
-    if (Object.prototype.hasOwnProperty.call(file, 'mimeType')) {
+    if (Object.hasOwn(file, 'mimeType')) {
       return file.mimeType === this.MIME_FOLDER;
     }
     return undefined;
   }
 
   public isDeleted(file: drive_v3.Schema$File): boolean {
-    if (Object.prototype.hasOwnProperty.call(file, 'trashed')) {
+    if (Object.hasOwn(file, 'trashed')) {
       return !!file.trashed;
     }
     return false;
@@ -82,13 +83,13 @@ export class GDrive {
     }
     const info: Params$Resource$Files$Get = { fileId };
     const promise = this.drive.files.get(info).then(({ data }) => data);
-    promise.catch((e) => {
+    promise.catch((e: unknown) => {
       this.genericError(e);
     });
     return promise;
   }
 
-  async emptyTrash() {
+  async emptyTrash(): Promise<{ status: number; data: unknown }> {
     await this.initiated;
     return this.drive.files.emptyTrash();
   }
@@ -102,11 +103,12 @@ export class GDrive {
         }
         return data;
       });
-      promise.catch((e) => {
+      promise.catch((e: unknown) => {
         this.genericError(e);
       });
       return promise;
     }
+    return undefined;
   }
 
   async uploadFile(file: string, folderName?: string | boolean, options: UploadOptionsBasic = {}): Promise<Schema$File$Modded> {
@@ -118,7 +120,7 @@ export class GDrive {
       name,
       mimeType
     };
-    let folderId = null;
+    let folderId: string | null = null;
     try {
       folderId = await this.getUploadFolderId(folderName || false, create, requestBody);
     } catch (err) {
@@ -141,7 +143,7 @@ export class GDrive {
     };
 
     const fileSize = fs.statSync(file).size;
-    const onUploadProgress = (evt: Socket) => {
+    const onUploadProgress = (evt: { bytesRead: number }) => {
       const progress = (evt.bytesRead / fileSize) * 100;
       if (progress === 100) {
         console.warn(`${Config.TAG} Upload ${name}: ${Math.round(progress)}% complete`);
@@ -153,7 +155,7 @@ export class GDrive {
       .finally(() => {
         readStream.destroy();
       });
-    promise.catch((e) => {
+    promise.catch((e: unknown) => {
       this.genericError(e);
     });
     return promise;
@@ -163,7 +165,7 @@ export class GDrive {
     files: string | string[],
     folderName?: string | boolean,
     options: UploadOptions = {}
-  ): Promise<{ [filename: string]: Schema$File$Modded }> {
+  ): Promise<Record<string, Schema$File$Modded>> {
     await this.initiated;
     const { compress, replace, create } = options;
     if (!Array.isArray(files)) {
@@ -173,17 +175,17 @@ export class GDrive {
     if (compress) {
       let zipName = compress;
       if (typeof zipName !== 'string') {
-        zipName = `zipped_${moment().format('YYYY-MM-DD.HHmmss')}.zip`;
+        zipName = `zipped_${dayjs().format('YYYY-MM-DD.HHmmss')}.zip`;
       }
       const result = await this.compressFiles(files, zipName);
       uploadFiles = [result];
     }
-    const result: { [filename: string]: Schema$File$Modded } = {};
+    const result: Record<string, Schema$File$Modded> = {};
     for (const file of uploadFiles) {
       if (file.includes('*')) {
-        await this.uploadFiles(glob.sync(file), folderName, options);
+        await this.uploadFiles(fs.globSync(file), folderName, options);
       } else if (fs.lstatSync(file).isDirectory()) {
-        await this.uploadFiles(glob.sync(`${file}/*`), folderName, options);
+        await this.uploadFiles(fs.globSync(`${file}/*`), folderName, options);
       } else {
         const filename = path.basename(file);
         const upFile = await this.uploadFile(file, folderName, { replace, create });
@@ -217,7 +219,7 @@ export class GDrive {
     const promise = this.drive.files
       .list(info)
       .then(async ({ data }) => {
-        files = files.concat(data.files as drive_v3.Schema$File[]);
+        files = files.concat(data.files ?? []);
         if (data.nextPageToken) {
           info.pageToken = data.nextPageToken;
           return this.getListFiles(info, files);
@@ -226,7 +228,7 @@ export class GDrive {
         }
       })
       .then((allFiles) => this.parseFilesMeta(allFiles));
-    promise.catch((e) => {
+    promise.catch((e: unknown) => {
       this.genericError(e);
     });
     return promise;
@@ -269,9 +271,7 @@ export class GDrive {
         .map((file) => {
           return {
             ...file,
-            toDelete: moment(file.createdTime || undefined).isSameOrBefore(
-              moment().subtract(+time, granularity as moment.unitOfTime.DurationConstructor)
-            )
+            toDelete: dayjs(file.createdTime || undefined).isSameOrBefore(dayjs().subtract(+time, granularity as ManipulateType))
           };
         })
         .filter((file) => file.toDelete);
@@ -296,8 +296,7 @@ export class GDrive {
   }
 
   private genericError<T = Error>(err: T): T {
-    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-    console.error(`${Config.TAG} The API returned an error: ${err}`);
+    console.error(`${Config.TAG} The API returned an error: ${String(err)}`);
     return err;
   }
 
@@ -338,7 +337,7 @@ export class GDrive {
         fields: 'id'
       })
       .then(({ data }) => data);
-    promise.catch((e) => {
+    promise.catch((e: unknown) => {
       this.genericError(e);
     });
     const createdFolder = await promise;
@@ -355,7 +354,7 @@ export class GDrive {
       FileUtils.mkdirp(path.dirname(fileDest));
       const output = fs.createWriteStream(fileDest);
       const readStreams: ReadStream[] = [];
-      const archive = archiver('zip', {
+      const archive = new ZipArchive({
         zlib: { level: 9 }
       });
       output.on('close', () => {
@@ -394,7 +393,7 @@ export class GDrive {
         }
       });
 
-      archive.finalize().finally(() => {
+      void archive.finalize().finally(() => {
         readStreams.forEach((r) => {
           r.destroy();
         });
@@ -402,3 +401,5 @@ export class GDrive {
     });
   }
 }
+
+export * from './types';

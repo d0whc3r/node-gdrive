@@ -1,27 +1,23 @@
-import { options } from './cliconfig';
+import fs from 'node:fs';
+import path from 'node:path';
+import { styleText } from 'node:util';
+import dayjs from 'dayjs';
+import mysqldump from 'mysqldump';
 import { GDrive } from '../src';
 import Config from '../src/config';
-import { Schema$File$Modded } from '../src/types';
-import mysqldump from 'mysqldump';
-import moment from 'moment';
 import FileUtils from '../src/file.utils';
-import path from 'path';
-import fs from 'fs';
-import colors from 'colors';
-
-const theme = {
-  folder: 'cyan',
-  error: 'red'
-};
-
-colors.setTheme(theme);
+import { Schema$File$Modded } from '../src/types';
+import { options } from './cliconfig';
 
 export class Cli {
-  constructor(private opts = options, private gdrive = new GDrive()) {}
+  constructor(
+    private opts = options,
+    private gdrive = new GDrive()
+  ) {}
 
   async parseOptions() {
     for (const command in this.opts) {
-      if (Object.prototype.hasOwnProperty.call(this.opts, command)) {
+      if (Object.hasOwn(this.opts, command)) {
         const args = this.opts[command] as string | string[];
         const zip = this.opts['zip'];
         const folder = this.opts['folder'];
@@ -74,7 +70,7 @@ export class Cli {
         const { folder: folderName, timeSpace } = info;
         await this.gdrive.cleanOlder(timeSpace, folderName || undefined);
       }
-    } catch (_e) {
+    } catch {
       console.error(`${Config.TAG} Error in delete files`);
     }
   }
@@ -96,18 +92,15 @@ export class Cli {
     try {
       mysqlfile = await this.createDumpFile();
     } catch (err) {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call,@typescript-eslint/restrict-template-expressions
-      console.error(colors.bold[theme.error](`${Config.TAG} Error mysql ${err}`));
+      console.error(styleText(['bold', 'red'], `${Config.TAG} Error mysql ${String(err)}`));
       process.exit(-1);
     }
     await this.backup(mysqlfile, opts);
   }
 
   private parseDelete(arg: string) {
-    let folder;
-    let timeSpace;
+    let folder: string | null;
+    let timeSpace: string;
     const parsed = arg.split('=');
     if (parsed.length > 1) {
       folder = parsed[0];
@@ -179,10 +172,7 @@ export class Cli {
     if (!name) {
       return '';
     }
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-    return colors.bold[theme.folder](name) as string;
+    return styleText(['bold', 'cyan'], name);
   }
 
   private createDumpFile(): Promise<string> {
@@ -205,7 +195,7 @@ export class Cli {
         database
       }
     }).then(({ dump }) => {
-      const fileDest = `./files/mysqldump-${moment().format('YYYY-MM-DD.HHmmss')}.sql`;
+      const fileDest = `./files/mysqldump-${dayjs().format('YYYY-MM-DD.HHmmss')}.sql`;
       FileUtils.mkdirp(path.dirname(fileDest));
       const content = Object.values(dump)
         .map((result) => result && result.replace(/^# /gm, '-- '))

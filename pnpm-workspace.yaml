@@ -1,0 +1,6 @@
+minimumReleaseAgeExclude:
+  - '@types/node@26.6.10'
+  - '@vitest/coverage-v8@5.1.2'
+  - '@vitest/mocker@5.1.2'
+  - '@vitest/spy@5.1.2'
+  - vitest@5.1.2

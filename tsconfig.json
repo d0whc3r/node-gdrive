@@ -1,46 +1,21 @@
 {
   "compilerOptions": {
-    "allowSyntheticDefaultImports": true,
-    "baseUrl": "./",
-    "declaration": false,
-    "emitDecoratorMetadata": true,
-    "esModuleInterop": true,
-    "experimentalDecorators": true,
-    "lib": [
-      "es2016",
-      "es6",
-      "es2015",
-      "dom"
-    ],
-    "module": "esnext",
-    "moduleResolution": "node",
-    "noEmitOnError": true,
-    "noImplicitAny": true,
+    "target": "ES2024",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2024"],
+    "types": ["node"],
+    "strict": true,
     "noImplicitReturns": true,
-    "noImplicitThis": false,
-    "noStrictGenericChecks": true,
     "noUnusedLocals": true,
     "noUnusedParameters": false,
-    "pretty": true,
-    "removeComments": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
-    "sourceMap": false,
-    "strict": true,
-    "strictNullChecks": true,
-    "target": "es2016",
-    "traceResolution": false,
-    "types": [
-      "node",
-      "jest"
-    ]
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "noEmit": true
   },
-  "exclude": [
-    "node_modules"
-  ],
-  "include": [
-    "./src/**/*.ts",
-    "./cli/**/*.ts",
-    "./tests/**/*.ts",
-    "./types"
-  ]
+  "include": ["src/**/*.ts", "cli/**/*.ts", "tests/**/*.ts", "vite*.config.mts", "vitest.config.mts"],
+  "exclude": ["node_modules", "dist", "bin"]
 }

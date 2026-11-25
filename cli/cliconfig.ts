@@ -88,8 +88,7 @@ let options: GDriveOptions = {};
 try {
   options = commandLineArgs(optionDefinitions);
 } catch (e) {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-  console.error('[-] Error:', e.message);
+  console.error('[-] Error:', e instanceof Error ? e.message : String(e));
   process.exit(1);
 }
 
@@ -124,8 +123,7 @@ if (options.help || !Object.keys(options).length) {
           example: `$ ${ex} -b src/* -b images/* -z -f zipped.zip -c`
         },
         {
-          desc:
-            '5. Backup files using wildcard and zip using "allfiles.zip" as filename into "zipped" folder, folder will be created if it doesn\'t exists and zipfile will be replaced if it exists',
+          desc: '5. Backup files using wildcard and zip using "allfiles.zip" as filename into "zipped" folder, folder will be created if it doesn\'t exists and zipfile will be replaced if it exists',
           example: `$ ${ex} -b src/* -b images/* -z allfiles.zip -f zipped -c -r`
         },
         {

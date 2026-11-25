@@ -3,7 +3,7 @@ import Params$Resource$Files$Get = drive_v3.Params$Resource$Files$Get;
 import Params$Resource$Files$List = drive_v3.Params$Resource$Files$List;
 import Params$Resource$Files$Create = drive_v3.Params$Resource$Files$Create;
 
-export { Params$Resource$Files$Create, Params$Resource$Files$Get, Params$Resource$Files$List };
+export type { Params$Resource$Files$Create, Params$Resource$Files$Get, Params$Resource$Files$List };
 
 export type FieldsType =
   | 'appProperties'

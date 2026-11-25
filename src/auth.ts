@@ -1,11 +1,14 @@
-import * as fs from 'fs';
-import { google } from 'googleapis';
-import { GetTokenResponse, OAuth2Client } from 'google-auth-library/build/src/auth/oauth2client';
-import { Credentials } from 'google-auth-library/build/src/auth/credentials';
-import readline from 'readline';
-import colors from 'colors';
+import * as fs from 'node:fs';
+import readline from 'node:readline';
+import { styleText } from 'node:util';
+import { Auth as GoogleAuth, google } from 'googleapis';
 import Config from './config';
 import { CredentialsFile, TokenFile } from './types';
+
+interface Deferred<T> {
+  resolve: (value: T | PromiseLike<T>) => void;
+  reject: (reason?: unknown) => void;
+}
 
 export default class Auth {
   public ready = true;
@@ -17,12 +20,12 @@ export default class Auth {
   ];
   private readonly TOKEN_FILE = Config.TOKEN_FILE;
   private readonly CREDENTIALS_FILE = Config.CREDENTIALS_FILE;
-  private _oAuth2Client?: OAuth2Client;
+  private _oAuth2Client?: GoogleAuth.OAuth2Client;
 
   constructor() {
     if (!this.existsCredentials) {
       this.ready = false;
-      console.error(colors.bold(`${Config.TAG} ERROR: Credentials file not found in ${this.CREDENTIALS_FILE}`).red);
+      console.error(styleText(['bold', 'red'], `${Config.TAG} ERROR: Credentials file not found in ${this.CREDENTIALS_FILE}`));
     }
   }
 
@@ -70,32 +73,33 @@ export default class Auth {
       });
       rl.question(`${Config.TAG} Enter the code from that page here: `, (code) => {
         rl.close();
-        this.oAuthGetToken(code, { resolve, reject } as PromiseConstructor);
+        this.oAuthGetToken(code, { resolve, reject });
       });
     });
   }
 
-  private oAuthGetToken(code: string, promise: PromiseConstructor) {
+  private oAuthGetToken(code: string, promise: Deferred<boolean>) {
     this.oAuth2Client(false)
       .getToken(code)
-      .then(({ tokens }: GetTokenResponse) => {
+      .then(({ tokens }) => {
         this.oAuth2Client(false).setCredentials(tokens);
         this.writeToken(tokens, promise);
       })
-      .catch((err: Error) => {
-        console.error(colors.bold(`${Config.TAG} Error retrieving access token`).red, err.message);
-        return promise.reject(err);
+      .catch((err: unknown) => {
+        const message = err instanceof Error ? err.message : String(err);
+        console.error(styleText(['bold', 'red'], `${Config.TAG} Error retrieving access token`), message);
+        promise.reject(err);
       });
   }
 
-  private writeToken(token: Credentials, { resolve, reject }: PromiseConstructor): void {
+  private writeToken(token: GoogleAuth.Credentials, { resolve, reject }: Deferred<boolean>): void {
     fs.writeFile(this.TOKEN_FILE, JSON.stringify(token), (err) => {
       if (err) {
         console.error(err);
-        void reject(err);
+        reject(err);
       } else {
         console.log(`${Config.TAG} Token stored to`, this.TOKEN_FILE);
-        void resolve(true);
+        resolve(true);
       }
     });
   }

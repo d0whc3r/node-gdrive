@@ -5,18 +5,18 @@ module.exports = {
     'next-major',
     {
       name: 'beta',
-      prerelease: true,
+      prerelease: true
     },
     {
       name: 'alpha',
-      prerelease: true,
-    },
+      prerelease: true
+    }
   ],
   plugins: [
     '@semantic-release/commit-analyzer',
     '@semantic-release/release-notes-generator',
     '@semantic-release/npm',
     '@semantic-release/github',
-    '@semantic-release/changelog',
-  ],
+    '@semantic-release/changelog'
+  ]
 };

@@ -1,4 +1,4 @@
-import * as fs from 'fs';
+import * as fs from 'node:fs';
 import Config from '../src/config';
 
 export const isCI = !!process.env.CI || !!process.env.CI_JOB_ID || false;
@@ -9,7 +9,7 @@ export function deleteCredentialsFile() {
     try {
       console.info('[test] Deleting CREDENTIALS_FILE');
       fs.unlinkSync(Config.CREDENTIALS_FILE);
-    } catch (err) {
+    } catch {
       console.warn('[test] No CREDENTIALS_FILE to delete');
     }
   }
@@ -29,7 +29,7 @@ export function deleteTokenFile() {
     try {
       console.info('[test] Deleting TOKEN_FILE');
       fs.unlinkSync(Config.TOKEN_FILE);
-    } catch (err) {
+    } catch {
       console.warn('[test] No TOKEN_FILE to delete');
     }
   }
