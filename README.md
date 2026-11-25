@@ -1,116 +1,103 @@
 # node-gdrive
 
-Modern Google Drive backup, restore, retention, and management CLI & TypeScript library built on **Node.js 26** and **`@googleapis/drive`**. Supports **Service Accounts / ADC**, **OAuth2 loopback with PKCE**, **Shared Drives**, nested folders, and client-side encryption.
+CLI and Node.js library to back up, restore, encrypt, and prune files on **Google Drive**—works via **Docker**, **npx/npm**, or as a **standalone binary** (Linux, macOS, Windows).
 
 [![CI](https://img.shields.io/github/actions/workflow/status/d0whc3r/node-gdrive/ci.yml?branch=master&style=flat-square&logo=githubactions&logoColor=white&label=CI)](https://github.com/d0whc3r/node-gdrive/actions/workflows/ci.yml)
-[![npm version](https://img.shields.io/npm/v/@d0whc3r/node-gdrive?style=flat-square&logo=npm&logoColor=white)](https://www.npmjs.com/package/@d0whc3r/node-gdrive)
-[![npm downloads](https://img.shields.io/npm/dm/@d0whc3r/node-gdrive?style=flat-square&logo=npm&logoColor=white)](https://www.npmjs.com/package/@d0whc3r/node-gdrive)
+[![npm](https://img.shields.io/npm/v/@d0whc3r/node-gdrive?style=flat-square&logo=npm&logoColor=white)](https://www.npmjs.com/package/@d0whc3r/node-gdrive)
+[![Docker Hub](https://img.shields.io/docker/v/d0whc3r/gdrive?style=flat-square&logo=docker&logoColor=white&label=docker)](https://hub.docker.com/r/d0whc3r/gdrive)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D26-339933?style=flat-square&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-7-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](https://opensource.org/licenses/MIT)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](./LICENSE)
 
 ---
 
-## Quick Start
+## Ways to Run
 
-1. **Choose your authentication method** (Service Account for servers/CI, or OAuth2 for personal Drive):
+### 1. Docker (No Node.js required)
 
 ```bash
-# Option A — Service Account (recommended for servers, cron & Docker)
-export GOOGLE_APPLICATION_CREDENTIALS="./secrets/service-account.json"
+docker run --rm d0whc3r/gdrive --help
 
-# Option B — OAuth2 Desktop credentials (opens a local loopback callback on first run)
-export CREDENTIALS_FILE="./secrets/credentials.json"
+# Mount your secrets folder read-only and list files
+docker run --rm -v "$PWD/secrets:/app/secrets:ro" d0whc3r/gdrive -l
+
+# Back up a local directory into Google Drive
+docker run --rm \
+  -v "$PWD/secrets:/app/secrets:ro" \
+  -v "$PWD/data:/data:ro" \
+  d0whc3r/gdrive -b /data -z backup.zip -f backups/daily -c -r
 ```
 
-2. **Run your first backup** (compresses `./data`, creates nested folders `backups/daily` if missing, and replaces any existing file):
+### 2. npx / npm (Node.js >= 26)
 
 ```bash
-npx @d0whc3r/node-gdrive -b ./data -z data-backup.zip -f backups/daily -c -r
-```
-
-3. **Preview retention cleanup safely** before deleting anything (`--dry-run` + `--keep-last`):
-
-```bash
-npx @d0whc3r/node-gdrive -f backups/daily -d 30d --keep-last 5 --dry-run
-```
-
----
-
-## Features
-
-- **Modern Google Authentication**:
-  - **Service Account / ADC** (`--service-account` / `GOOGLE_APPLICATION_CREDENTIALS`) for headless servers, cron jobs, and CI/CD.
-  - **Localhost Loopback OAuth2 + PKCE** (`http://127.0.0.1:<port>/oauth2callback`) with automatic token refresh persistence (`0600` permissions).
-- **Shared Drives & Nested Folders**: Target Google Workspace Shared Drives (`--drive-id`) and upload to nested paths (`-f backups/prod/mysql`) with fast Drive API `q` queries.
-- **Flexible Backups**: Upload files, directories, globs, or piped `--stdin` streams with optional ZIP compression, `--exclude` filters, bounded parallel uploads, and exponential backoff retries on `429`/`5xx`.
-- **Download & Restore**: Download by file ID or filename (`--download <file> -o <path>`) with optional transparent decryption.
-- **Client-Side Encryption (`--encrypt`)**: Streaming **AES-256-GCM** encryption using Node.js built-in `node:crypto` (`scrypt` key derivation, random salt & IV, authentication tag).
-- **Safe Retention Cleanup (`-d`)**: Delete files older than a duration (`s`, `m`, `h`, `d`, `w`, `M`, `y`) with `--keep-last <N>` protection, automatic folder/trash exclusion, and `--dry-run` preview.
-- **MySQL Backups (`-m`)**: Dump a MySQL database, optionally zip/encrypt it, upload to Drive, and automatically clean up temporary files (`0600` permissions in a private `0700` temp directory).
-- **Standalone Binaries**: Native Node.js 26 Single Executable Applications (SEA) for Linux, macOS, and Windows—no Node.js installation needed on target servers.
-
----
-
-## Installation
-
-### Option 1: Run on demand or install globally (requires Node.js >= 26)
-
-```bash
-# Run without installing
+# Run on demand
 npx @d0whc3r/node-gdrive --help
 
-# Install globally
+# Or install globally
 npm install -g @d0whc3r/node-gdrive
-
-# Add to a Node.js / TypeScript project
-pnpm add @d0whc3r/node-gdrive
+node-gdrive --help
 ```
 
-### Option 2: Standalone Binary (Node.js 26 SEA)
+### 3. Standalone Binary (No Node.js required)
 
-Build a self-contained binary for your OS (or download prebuilt artifacts from GitHub Actions):
+Download the prebuilt `node-gdrive` (Linux / macOS) or `node-gdrive.exe` (Windows) executable from [GitHub Releases](https://github.com/d0whc3r/node-gdrive/releases) and run it directly:
 
 ```bash
-pnpm install
-pnpm build:sea
-./node-gdrive --version
+chmod +x ./node-gdrive
 ./node-gdrive --help
-```
-
-### Option 3: Docker
-
-```bash
-docker build -t node-gdrive .
-
-# Run with Service Account or OAuth secrets mounted read-only (runs as non-root UID 10001)
-docker run --rm \
-  -v "$(pwd)/secrets:/app/secrets:ro" \
-  -v "$(pwd)/data:/data:ro" \
-  node-gdrive -b /data -z backup.zip -f backups/daily -c -r
 ```
 
 ---
 
 ## Authentication Setup
 
-### 1. Service Account / ADC (Recommended for CI, Cron & Docker)
+### Option A: Service Account (Recommended for Servers, Cron & Docker)
 
-1. Create a Service Account in Google Cloud Console with the **Google Drive API** enabled and download its JSON key.
-2. Share the target folder or Shared Drive with the Service Account email.
-3. Point `node-gdrive` to the key via env var or CLI flag:
+1. In [Google Cloud Console](https://console.cloud.google.com/), enable the **Google Drive API**, create a **Service Account**, and download its JSON key to `./secrets/service-account.json`.
+2. Share your target Google Drive folder or **Shared Drive** with the Service Account email address.
+3. Run with `GOOGLE_APPLICATION_CREDENTIALS` or `--service-account`:
 
 ```bash
 GOOGLE_APPLICATION_CREDENTIALS=./secrets/service-account.json \
   node-gdrive -l --drive-id <SHARED_DRIVE_ID>
 ```
 
-### 2. OAuth2 Desktop App (Personal Google Drive / Interactive CLI)
+### Option B: OAuth2 Desktop App (Personal Google Drive)
 
-1. Enable the **Google Drive API** in Google Cloud Console and create an **OAuth 2.0 Desktop App** client.
-2. Save the downloaded JSON as `./secrets/credentials.json`.
-3. Run any command (e.g., `node-gdrive -l`) and open the printed URL in your browser.
-4. `node-gdrive` captures the callback on an ephemeral `http://127.0.0.1:<port>/oauth2callback` server (with PKCE `S256` and `state` validation) and saves the token with `0600` permissions to `./secrets/token.json`.
+1. In [Google Cloud Console](https://console.cloud.google.com/), enable the **Google Drive API**, create an **OAuth 2.0 Desktop App** client, and save the JSON as `./secrets/credentials.json`.
+2. Run any command (for example, `node-gdrive -l`).
+3. Open the printed authorization URL in your browser and approve access. `node-gdrive` captures the callback automatically via a temporary local loopback server (`http://127.0.0.1:<port>/oauth2callback`, PKCE + `state`) and saves `./secrets/token.json` with `0600` permissions.
+
+---
+
+## Common Usage Examples
+
+```bash
+# List files (human-readable or JSON for scripts)
+node-gdrive -l
+node-gdrive -l --json
+
+# Back up files or globs to a nested folder (creating missing folders)
+node-gdrive -b "src/*" -b package.json -f backups/app -c -r
+
+# Back up as a ZIP archive, excluding logs, with client-side AES-256-GCM encryption
+BACKUP_ENCRYPTION_KEY="my-strong-passphrase" \
+  node-gdrive -b "./data/*" --exclude "*.log" -z backup.zip -f backups -c -r --encrypt
+
+# Download and decrypt a backup
+BACKUP_ENCRYPTION_KEY="my-strong-passphrase" \
+  node-gdrive --download backup.zip.enc -f backups -o ./backup.zip --encrypt
+
+# Pipe a PostgreSQL dump directly to Google Drive without writing to disk
+pg_dump mydb | node-gdrive --stdin --name mydb.sql -f backups/pg -c
+
+# Preview retention cleanup safely before deleting anything
+node-gdrive -f backups/daily -d 30d --keep-last 5 --dry-run
+
+# Nightly cron job: MySQL dump + zip + encrypt + prune older than 14 days (keep at least 5)
+node-gdrive -m -z -f backups/mysql -c --encrypt && \
+  node-gdrive -f backups/mysql -d 14d --keep-last 5
+```
 
 ---
 
@@ -129,9 +116,7 @@ See [example.env](./example.env) for a ready-to-copy template.
 
 ---
 
-## CLI Reference
-
-### Options
+## CLI Options
 
 | Flag                       | Alias | Description                                                            |
 | -------------------------- | ----- | ---------------------------------------------------------------------- |
@@ -158,31 +143,6 @@ See [example.env](./example.env) for a ready-to-copy template.
 | `--version`                | `-v`  | Print CLI version                                                      |
 | `--help`                   | `-h`  | Print usage guide                                                      |
 
-### Common Recipes
-
-```bash
-# 1. List files as JSON
-node-gdrive -l --json
-
-# 2. Backup files/globs to a nested folder (creating missing folders)
-node-gdrive -b "src/*" -b package.json -f backups/app -c -r
-
-# 3. Backup as an encrypted ZIP while excluding logs
-BACKUP_ENCRYPTION_KEY="my-strong-passphrase" \
-  node-gdrive -b "./data/*" --exclude "*.log" -z backup.zip -f backups -c -r --encrypt
-
-# 4. Download and decrypt a backup
-BACKUP_ENCRYPTION_KEY="my-strong-passphrase" \
-  node-gdrive --download backup.zip.enc -f backups -o ./backup.zip --encrypt
-
-# 5. Stream a PostgreSQL dump directly to Google Drive without touching disk
-pg_dump mydb | node-gdrive --stdin --name mydb.sql -f backups/pg -c
-
-# 6. Nightly cron job: MySQL backup + prune older than 14 days while keeping at least 5 backups
-node-gdrive -m -z -f backups/mysql -c --encrypt && \
-  node-gdrive -f backups/mysql -d 14d --keep-last 5
-```
-
 ### Valid Duration Units (`-d`)
 
 | Unit | Meaning | Example |
@@ -195,17 +155,21 @@ node-gdrive -m -z -f backups/mysql -c --encrypt && \
 | `M`  | Months  | `1M`    |
 | `y`  | Years   | `1y`    |
 
-> Invalid units are rejected immediately with a non-zero exit code to prevent accidental deletions.
+> Unrecognized units are rejected immediately to prevent accidental deletions.
 
 ### Exit Codes
 
-- `0`: Command succeeded (or `--help` / `--version`).
-- `1`: Runtime or Google Drive API error (authentication, network, missing file, etc.).
-- `2`: Invalid CLI arguments or missing required flags.
+- `0`: Success (or `--help` / `--version`).
+- `1`: Runtime or Google Drive API error.
+- `2`: Invalid CLI arguments or missing required options.
 
 ---
 
-## Programmatic API (TypeScript / ESM & CJS)
+## Using as a Node.js Library
+
+```bash
+npm install @d0whc3r/node-gdrive
+```
 
 ### ESM / TypeScript
 
@@ -218,8 +182,8 @@ const gdrive = new GDrive({
   concurrency: 4
 });
 
-// Upload files with compression, exclusions, and AES-256-GCM encryption
-const uploaded = await gdrive.uploadFiles(['./data/*'], 'backups/daily', {
+// Upload with ZIP compression, exclusions, and AES-256-GCM encryption
+await gdrive.uploadFiles(['./data/*'], 'backups/daily', {
   create: true,
   replace: true,
   compress: 'daily.zip',
@@ -233,7 +197,7 @@ await gdrive.downloadFile('daily.zip.enc', './restore/daily.zip', {
   decryptKey: process.env.BACKUP_ENCRYPTION_KEY
 });
 
-// Retention cleanup: delete files older than 14 days, always keeping the 5 newest
+// Delete files older than 14 days while keeping at least the 5 newest
 await gdrive.cleanOlder('14d', 'backups/daily', { keepLast: 5 });
 ```
 
@@ -248,18 +212,8 @@ gdrive.listFiles().then((files) => console.log(files));
 
 ---
 
-## Development
+## Contributing, Security & License
 
-```bash
-pnpm install
-pnpm lint           # Oxlint
-pnpm format:check   # Oxfmt
-pnpm typecheck      # TypeScript 7
-pnpm test:unit      # Fast offline unit tests (Vitest)
-pnpm test:coverage  # Coverage report
-pnpm build          # Library (CJS/ESM/.d.ts) + CLI + Node 26 SEA binary
-```
-
-## License
-
-MIT
+- Want to contribute or build from source? See [CONTRIBUTING.md](./CONTRIBUTING.md).
+- Found a security issue? See [SECURITY.md](./SECURITY.md).
+- Released under the [MIT License](./LICENSE).
