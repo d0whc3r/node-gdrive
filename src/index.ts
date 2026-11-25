@@ -482,6 +482,10 @@ export class GDrive {
         filesToUpload = [zipPath];
       }
 
+      if (folderName && typeof folderName === 'string' && filesToUpload.length > 0 && !(dryRun ?? this.defaultDryRun)) {
+        await this.findFolderId(folderName, create ?? true);
+      }
+
       const result: Record<string, Schema$File$Modded> = {};
       await runWithConcurrency(filesToUpload, concurrency, async (file) => {
         const uploaded = await this.uploadFile(file, folderName, {
@@ -653,7 +657,23 @@ export class GDrive {
     return err;
   }
 
-  private async findFolderId(folderPath: string, create = false): Promise<string> {
+  private readonly inFlightFolders = new Map<string, Promise<string>>();
+
+  private findFolderId(folderPath: string, create = false): Promise<string> {
+    const cacheKey = `${folderPath}::${create}`;
+    const inFlight = this.inFlightFolders.get(cacheKey);
+    if (inFlight) {
+      return inFlight;
+    }
+
+    const promise = this.resolveFolderId(folderPath, create).finally(() => {
+      this.inFlightFolders.delete(cacheKey);
+    });
+    this.inFlightFolders.set(cacheKey, promise);
+    return promise;
+  }
+
+  private async resolveFolderId(folderPath: string, create = false): Promise<string> {
     const segments = folderPath
       .split('/')
       .map((s) => s.trim())
