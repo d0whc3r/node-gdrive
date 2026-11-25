@@ -1,4 +1,5 @@
 import * as fs from 'node:fs';
+import * as path from 'node:path';
 import Config from '../src/config';
 
 export const isCI = !!process.env.CI || !!process.env.CI_JOB_ID || false;
@@ -20,6 +21,7 @@ export function createCredentialsFile() {
     deleteCredentialsFile();
     const content = process.env.CREDENTIALS_JSON || '{}';
     console.info('[test] Creating CREDENTIALS_FILE');
+    fs.mkdirSync(path.dirname(Config.CREDENTIALS_FILE), { recursive: true });
     fs.writeFileSync(Config.CREDENTIALS_FILE, content, { encoding: 'utf8', flag: 'w' });
   }
 }
@@ -40,6 +42,7 @@ export function createTokenFile() {
     deleteTokenFile();
     const content = process.env.TOKEN_JSON || '{}';
     console.info('[test] Creating TOKEN_FILE');
+    fs.mkdirSync(path.dirname(Config.TOKEN_FILE), { recursive: true });
     fs.writeFileSync(Config.TOKEN_FILE, content, { encoding: 'utf8', flag: 'w' });
   }
 }
