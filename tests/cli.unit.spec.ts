@@ -97,11 +97,13 @@ describe('CLI argument parsing & commands', () => {
       expect(stdinOpts.name).toBe('dump.sql');
     });
 
-    it('parses --db, --db-url, and --db-format flags', () => {
-      const parsed = parseCliArgs(['--db', 'postgres', '--db-url', 'postgresql://localhost/app', '--db-format', 'custom']);
+    it('parses --db, --db-url, --db-format, and --update flags', () => {
+      const parsed = parseCliArgs(['--db', 'postgres', '--db-url', 'postgresql://localhost/app', '--db-format', 'custom', '--update']);
       expect(parsed.db).toBe('postgres');
       expect(parsed['db-url']).toBe('postgresql://localhost/app');
       expect(parsed['db-format']).toBe('custom');
+      expect(parsed.update).toBe(true);
+      expect(parseCliArgs(['-u']).update).toBe(true);
     });
 
     it('rejects invalid --keep-last, --stdin without --name, and unknown options', () => {

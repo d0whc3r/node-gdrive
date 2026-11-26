@@ -167,6 +167,13 @@ export const optionDefinitions: OptionDefinition[] = [
     description: 'Suppress non-essential log output'
   },
   {
+    name: 'update',
+    alias: 'u',
+    multiple: false,
+    type: Boolean,
+    description: 'Update standalone binary to the latest GitHub release (supports --dry-run)'
+  },
+  {
     name: 'version',
     alias: 'v',
     multiple: false,
@@ -207,6 +214,7 @@ export interface GDriveOptions extends CommandLineOptions {
   'service-account'?: string;
   json?: boolean;
   quiet?: boolean;
+  update?: boolean;
 }
 
 export function getVersion(): string {

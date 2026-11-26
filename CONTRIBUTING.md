@@ -52,7 +52,9 @@ src/
 cli/
 ├── cli.ts                   # Binary entrypoint & exit-code handling
 ├── cliconfig.ts             # CLI flags & usage guide
-└── climodule.ts             # CLI command orchestration (backup, db, stdin, download, delete, list)
+├── climodule.ts             # CLI command orchestration (backup, db, stdin, download, delete, list)
+└── updater.ts               # Self-updater (--update) for SEA standalone binaries
+install.sh                   # POSIX curl/wget installer for GitHub Release SEA binaries
 ```
 
 ### Database Backup Architecture

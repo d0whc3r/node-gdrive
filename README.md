@@ -47,12 +47,28 @@ node-gdrive --help
 
 ### 3. Standalone Binary (No Node.js required)
 
-Download the prebuilt `node-gdrive` (Linux / macOS) or `node-gdrive.exe` (Windows) executable from [GitHub Releases](https://github.com/d0whc3r/node-gdrive/releases) and run it directly:
+Install the prebuilt binary on **Linux (`x64`)** or **macOS (`arm64`)** with a single command:
 
 ```bash
-chmod +x ./node-gdrive
-./node-gdrive --help
+curl -fsSL https://raw.githubusercontent.com/d0whc3r/node-gdrive/master/install.sh | sh
 ```
+
+Optional installer overrides:
+
+```bash
+# Pin a specific version or custom install directory
+VERSION=v3.5.1 INSTALL_DIR="$HOME/.local/bin" \
+  curl -fsSL https://raw.githubusercontent.com/d0whc3r/node-gdrive/master/install.sh | sh
+```
+
+Update an installed standalone binary in place at any time:
+
+```bash
+node-gdrive --update            # Check GitHub Releases and replace binary atomically
+node-gdrive --update --dry-run  # Check if a newer release is available without modifying the binary
+```
+
+_(On Windows `x64`, download `node-gdrive-win-x64.exe` from [GitHub Releases](https://github.com/d0whc3r/node-gdrive/releases); `--update` works on Windows too.)_
 
 ---
 
@@ -178,33 +194,34 @@ See [example.env](./example.env) for a ready-to-copy template.
 
 ## CLI Options
 
-| Flag                       | Alias | Description                                                            |
-| -------------------------- | ----- | ---------------------------------------------------------------------- |
-| `--list`                   | `-l`  | List files and folders                                                 |
-| `--backup <file*>`         | `-b`  | Upload files, directories, or globs (repeatable)                       |
-| `--download <id-or-name>`  | —     | Download a file by ID or name                                          |
-| `--output <path>`          | `-o`  | Local destination path for `--download`                                |
-| `--folder <path>`          | `-f`  | Destination folder path (supports nested paths like `backups/daily`)   |
-| `--zip [filename.zip]`     | `-z`  | Compress backup files into a ZIP archive                               |
-| `--exclude <glob>`         | —     | Exclude files matching glob pattern (repeatable)                       |
-| `--replace`                | `-r`  | Replace existing file in target folder on upload                       |
-| `--create`                 | `-c`  | Create destination folder(s) if they do not exist                      |
-| `--delete <rule>`          | `-d`  | Delete files older than duration (`folder=7d` or `7d`, repeatable)     |
-| `--keep-last <N>`          | —     | Always preserve the N newest matching files when deleting              |
-| `--dry-run`                | —     | Preview uploads/deletions without modifying Drive                      |
-| `--encrypt`                | —     | Encrypt on upload / decrypt on download using `$BACKUP_ENCRYPTION_KEY` |
-| `--stdin`                  | —     | Read upload payload from standard input (requires `--name`)            |
-| `--name <filename>`        | —     | Filename when uploading from `--stdin`                                 |
-| `--db <engine>`            | —     | Native DB backup: `postgres`, `mysql` (`mariadb`), `mongodb`, `sqlite` |
-| `--db-url <uri>`           | —     | Database connection URI (auto-detects engine from scheme)              |
-| `--db-format <fmt>`        | —     | PostgreSQL dump format: `plain` (`.sql`), `custom` (`.dump`), `tar`    |
-| `--mysql`                  | `-m`  | Alias for `--db mysql`                                                 |
-| `--drive-id <id>`          | —     | Target a Google Workspace Shared Drive                                 |
-| `--service-account <path>` | —     | Path to a Service Account JSON key                                     |
-| `--json`                   | —     | Output machine-readable JSON (ideal for CI/scripts)                    |
-| `--quiet`                  | `-q`  | Suppress informational logs                                            |
-| `--version`                | `-v`  | Print CLI version                                                      |
-| `--help`                   | `-h`  | Print usage guide                                                      |
+| Flag                       | Alias | Description                                                              |
+| -------------------------- | ----- | ------------------------------------------------------------------------ |
+| `--list`                   | `-l`  | List files and folders                                                   |
+| `--backup <file*>`         | `-b`  | Upload files, directories, or globs (repeatable)                         |
+| `--download <id-or-name>`  | —     | Download a file by ID or name                                            |
+| `--output <path>`          | `-o`  | Local destination path for `--download`                                  |
+| `--folder <path>`          | `-f`  | Destination folder path (supports nested paths like `backups/daily`)     |
+| `--zip [filename.zip]`     | `-z`  | Compress backup files into a ZIP archive                                 |
+| `--exclude <glob>`         | —     | Exclude files matching glob pattern (repeatable)                         |
+| `--replace`                | `-r`  | Replace existing file in target folder on upload                         |
+| `--create`                 | `-c`  | Create destination folder(s) if they do not exist                        |
+| `--delete <rule>`          | `-d`  | Delete files older than duration (`folder=7d` or `7d`, repeatable)       |
+| `--keep-last <N>`          | —     | Always preserve the N newest matching files when deleting                |
+| `--dry-run`                | —     | Preview uploads/deletions without modifying Drive                        |
+| `--encrypt`                | —     | Encrypt on upload / decrypt on download using `$BACKUP_ENCRYPTION_KEY`   |
+| `--stdin`                  | —     | Read upload payload from standard input (requires `--name`)              |
+| `--name <filename>`        | —     | Filename when uploading from `--stdin`                                   |
+| `--db <engine>`            | —     | Native DB backup: `postgres`, `mysql` (`mariadb`), `mongodb`, `sqlite`   |
+| `--db-url <uri>`           | —     | Database connection URI (auto-detects engine from scheme)                |
+| `--db-format <fmt>`        | —     | PostgreSQL dump format: `plain` (`.sql`), `custom` (`.dump`), `tar`      |
+| `--mysql`                  | `-m`  | Alias for `--db mysql`                                                   |
+| `--drive-id <id>`          | —     | Target a Google Workspace Shared Drive                                   |
+| `--service-account <path>` | —     | Path to a Service Account JSON key                                       |
+| `--json`                   | —     | Output machine-readable JSON (ideal for CI/scripts)                      |
+| `--quiet`                  | `-q`  | Suppress informational logs                                              |
+| `--update`                 | `-u`  | Update standalone binary to latest GitHub release (supports `--dry-run`) |
+| `--version`                | `-v`  | Print CLI version                                                        |
+| `--help`                   | `-h`  | Print usage guide                                                        |
 
 ### Valid Duration Units (`-d`)
 
