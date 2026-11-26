@@ -1,11 +1,7 @@
-import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import type { Readable } from 'node:stream';
 import { styleText } from 'node:util';
-import dayjs from 'dayjs';
-import mysqldump from 'mysqldump';
-import { GDrive } from '../src';
+import { dumpDatabase, GDrive } from '../src';
 import Config from '../src/config';
 import type { Logger, Schema$File$Modded } from '../src/types';
 import { GDriveOptions, getUsageGuide, getVersion } from './cliconfig';
@@ -86,7 +82,9 @@ export class Cli {
     if (this.opts.delete) {
       await this.delete(this.opts.delete, folder, { dryRun, keepLast: this.opts['keep-last'] });
     }
-    if (this.opts.mysql) {
+    if (this.opts.db || this.opts['db-url']) {
+      await this.backupDatabase({ zip, folder, replace, create, dryRun });
+    } else if (this.opts.mysql) {
       await this.dumpMysql({ zip, folder, replace, create, dryRun });
     }
   }
@@ -187,19 +185,61 @@ export class Cli {
     return saved;
   }
 
+  async backupDatabase(opts: {
+    engine?: string;
+    url?: string;
+    format?: 'plain' | 'custom' | 'tar';
+    zip?: string | null;
+    folder?: string;
+    replace?: boolean;
+    create?: boolean;
+    dryRun?: boolean;
+  }): Promise<Schema$File$Modded | Record<string, Schema$File$Modded>> {
+    const engine = opts.engine ?? this.opts.db ?? (this.opts.mysql ? 'mysql' : undefined);
+    const url = opts.url ?? this.opts['db-url'];
+    const format = opts.format ?? this.opts['db-format'];
+    const wantsZip = Boolean(opts.zip || opts.zip === null);
+
+    const dump = await dumpDatabase({
+      engine,
+      url,
+      format,
+      preferFile: wantsZip,
+      filename: this.opts.name,
+      tag: Config.TAG
+    });
+
+    try {
+      if (dump.kind === 'stream') {
+        const encryptKey = this.getEncryptionKey();
+        const uploaded = await this.gdrive.uploadStream(dump.stream, dump.filename, opts.folder || false, {
+          replace: opts.replace,
+          create: opts.create,
+          dryRun: opts.dryRun,
+          encryptKey,
+          mimeType: dump.mimeType
+        });
+        await dump.wait();
+        if (this.opts.json) {
+          console.info(JSON.stringify(uploaded, null, 2));
+        }
+        return uploaded;
+      }
+
+      return await this.backup(dump.filePath, opts);
+    } finally {
+      await dump.cleanup();
+    }
+  }
+
   async dumpMysql(opts: {
     zip?: string | null;
     folder?: string;
     replace?: boolean;
     create?: boolean;
     dryRun?: boolean;
-  }): Promise<Record<string, Schema$File$Modded>> {
-    const { dumpPath, tempDir } = await this.createDumpFile();
-    try {
-      return await this.backup(dumpPath, opts);
-    } finally {
-      fs.rmSync(tempDir, { recursive: true, force: true });
-    }
+  }): Promise<Schema$File$Modded | Record<string, Schema$File$Modded>> {
+    return this.backupDatabase({ ...opts, engine: 'mysql' });
   }
 
   private parseDelete(arg: string): { folder: string | null; timeSpace: string } {
@@ -259,39 +299,5 @@ export class Cli {
       return '';
     }
     return styleText(['bold', 'cyan'], name);
-  }
-
-  private async createDumpFile(): Promise<{ dumpPath: string; tempDir: string }> {
-    const host = process.env.MYSQL_HOST || 'localhost';
-    const port = Number(process.env.MYSQL_PORT || 3306);
-    const user = process.env.MYSQL_USER || '';
-    const password = process.env.MYSQL_PASSWORD || '';
-    const database = process.env.MYSQL_DATABASE || '';
-
-    if (!user || !password || !database) {
-      throw new Error(
-        `${Config.TAG} Missing required MySQL environment variables ($MYSQL_USER, $MYSQL_PASSWORD, $MYSQL_DATABASE, $MYSQL_HOST, $MYSQL_PORT)`
-      );
-    }
-
-    const { dump } = await mysqldump({
-      connection: {
-        host,
-        port,
-        user,
-        password,
-        database
-      }
-    });
-
-    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'node-gdrive-mysql-'));
-    fs.chmodSync(tempDir, 0o700);
-    const dumpPath = path.join(tempDir, `mysqldump-${dayjs().format('YYYY-MM-DD.HHmmss')}.sql`);
-    const content = Object.values(dump)
-      .filter((section): section is string => Boolean(section))
-      .map((result) => result.replace(/^# /gm, '-- '))
-      .join('\n\n');
-    fs.writeFileSync(dumpPath, content, { mode: 0o600 });
-    return { dumpPath, tempDir };
   }
 }

@@ -25,6 +25,13 @@ docker run --rm \
   -v "$PWD/secrets:/app/secrets:ro" \
   -v "$PWD/data:/data:ro" \
   d0whc3r/gdrive -b /data -z backup.zip -f backups/daily -c -r
+
+# Back up PostgreSQL / MySQL / MariaDB / MongoDB using the :db image variant
+# (includes pg_dump, mariadb-dump, and mongodump; SQLite works in both images)
+docker run --rm \
+  -v "$PWD/secrets:/app/secrets:ro" \
+  -e DATABASE_URL="postgresql://user:pass@host:5432/mydb" \
+  d0whc3r/gdrive:db --db postgres -f backups/pg -c --encrypt
 ```
 
 ### 2. npx / npm (Node.js >= 26)
@@ -70,6 +77,52 @@ GOOGLE_APPLICATION_CREDENTIALS=./secrets/service-account.json \
 
 ---
 
+## Database Backups
+
+`node-gdrive` supports native backups for **PostgreSQL**, **MySQL / MariaDB**, **MongoDB**, and **SQLite** without piping through `--stdin`.
+
+| Engine              | CLI Flag / Aliases                   | Underlying Method                                                           | Mode                                        | Docker Image                                    |
+| ------------------- | ------------------------------------ | --------------------------------------------------------------------------- | ------------------------------------------- | ----------------------------------------------- |
+| **PostgreSQL**      | `--db postgres` (`pg`, `postgresql`) | `pg_dump` (`plain`, `custom`, `tar`)                                        | Direct stream (`O(1)` RAM, zero temp disk)  | `d0whc3r/gdrive:db`                             |
+| **MySQL / MariaDB** | `--db mysql` (`mariadb`, `-m`)       | `mysqldump` / `mariadb-dump` (auto-fallback to pure-JS `mysqldump`)         | Direct stream (or temp file on JS fallback) | `d0whc3r/gdrive:db` _(or slim via JS fallback)_ |
+| **MongoDB**         | `--db mongodb` (`mongo`)             | `mongodump --archive`                                                       | Direct stream (`O(1)` RAM, zero temp disk)  | `d0whc3r/gdrive:db`                             |
+| **SQLite**          | `--db sqlite` (`sqlite3`)            | Node.js built-in `node:sqlite` online backup (WAL-safe, zero external deps) | Temp file (`0600`, auto-cleaned)            | `d0whc3r/gdrive:latest` & `:db`                 |
+
+> **Streaming & Compression:** Without `-z`/`--zip`, PostgreSQL, MySQL/MariaDB, and MongoDB stream directly into Google Drive (and optional `--encrypt` AES-256-GCM) with zero temp disk space. Adding `-z` compresses the dump into a ZIP archive in a `0700` temp directory before uploading.
+>
+> **Credential Safety:** Passwords are never passed as CLI arguments (`ps`-safe). They are injected via `PGPASSWORD`, `MYSQL_PWD`, or a temporary `0600` `mongodump --config` file that is removed immediately after the dump finishes.
+
+### Engine Examples
+
+```bash
+# PostgreSQL using standard PG* environment variables
+PGHOST=db.internal PGUSER=postgres PGPASSWORD=secret PGDATABASE=app \
+  node-gdrive --db postgres -f backups/pg -c --encrypt
+
+# PostgreSQL custom binary format (.dump) via connection URI (auto-detects engine)
+node-gdrive --db-url "postgresql://postgres:secret@db.internal:5432/app?sslmode=require" \
+  --db-format custom -f backups/pg -c --encrypt
+
+# MySQL / MariaDB (via --db mysql, --db mariadb, -m, or URI)
+node-gdrive --db-url "mariadb://root:secret@127.0.0.1:3306/shop" -f backups/mysql -c
+
+# MongoDB single-file archive via MONGODB_URI or --db-url
+MONGODB_URI="mongodb+srv://user:secret@cluster.example.com/orders" \
+  node-gdrive --db mongodb -f backups/mongo -c --encrypt
+
+# SQLite online backup (safe while the database is in active WAL use)
+node-gdrive --db sqlite --db-url "sqlite:///var/data/app.sqlite" -z -f backups/sqlite -c
+
+# Docker (:db variant bundles pg_dump, mariadb-dump, and mongodump)
+docker run --rm \
+  -v "$PWD/secrets:/app/secrets:ro" \
+  -e DATABASE_URL="postgresql://postgres:secret@host.docker.internal:5432/app" \
+  -e BACKUP_ENCRYPTION_KEY="my-strong-passphrase" \
+  d0whc3r/gdrive:db --db postgres -f backups/pg -c --encrypt
+```
+
+---
+
 ## Common Usage Examples
 
 ```bash
@@ -88,29 +141,36 @@ BACKUP_ENCRYPTION_KEY="my-strong-passphrase" \
 BACKUP_ENCRYPTION_KEY="my-strong-passphrase" \
   node-gdrive --download backup.zip.enc -f backups -o ./backup.zip --encrypt
 
-# Pipe a PostgreSQL dump directly to Google Drive without writing to disk
-pg_dump mydb | node-gdrive --stdin --name mydb.sql -f backups/pg -c
+# Native database backups (PostgreSQL, MySQL/MariaDB, MongoDB, SQLite)
+node-gdrive --db postgres -f backups/pg -c --encrypt
+node-gdrive --db-url "postgresql://user:pass@host:5432/mydb" --db-format custom -f backups/pg -c
+node-gdrive --db-url "mongodb+srv://user:pass@cluster/mydb" -f backups/mongo -c --encrypt
+node-gdrive --db sqlite --db-url "sqlite:///var/data/app.sqlite" -z -f backups/sqlite -c
 
 # Preview retention cleanup safely before deleting anything
 node-gdrive -f backups/daily -d 30d --keep-last 5 --dry-run
 
-# Nightly cron job: MySQL dump + zip + encrypt + prune older than 14 days (keep at least 5)
-node-gdrive -m -z -f backups/mysql -c --encrypt && \
-  node-gdrive -f backups/mysql -d 14d --keep-last 5
+# Nightly cron job: PostgreSQL dump + encrypt + prune older than 14 days (keep at least 5)
+node-gdrive --db postgres -f backups/pg -c --encrypt && \
+  node-gdrive -f backups/pg -d 14d --keep-last 5
 ```
 
 ---
 
 ## Environment Variables
 
-| Variable                                                                     | Description                                         | Default                      |
-| ---------------------------------------------------------------------------- | --------------------------------------------------- | ---------------------------- |
-| `GOOGLE_APPLICATION_CREDENTIALS`                                             | Path to Service Account JSON key (standard GCP var) | —                            |
-| `SERVICE_ACCOUNT_FILE`                                                       | Alias for Service Account JSON key path             | —                            |
-| `CREDENTIALS_FILE`                                                           | Path to OAuth2 Desktop `credentials.json`           | `./secrets/credentials.json` |
-| `TOKEN_FILE`                                                                 | Path to stored OAuth2 `token.json` (`0600`)         | `./secrets/token.json`       |
-| `BACKUP_ENCRYPTION_KEY`                                                      | Passphrase for `--encrypt` (AES-256-GCM)            | —                            |
-| `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_DATABASE` | MySQL connection for `--mysql`                      | `localhost:3306`             |
+| Variable                                                                                    | Description                                               | Default                      |
+| ------------------------------------------------------------------------------------------- | --------------------------------------------------------- | ---------------------------- |
+| `GOOGLE_APPLICATION_CREDENTIALS`                                                            | Path to Service Account JSON key (standard GCP var)       | —                            |
+| `SERVICE_ACCOUNT_FILE`                                                                      | Alias for Service Account JSON key path                   | —                            |
+| `CREDENTIALS_FILE`                                                                          | Path to OAuth2 Desktop `credentials.json`                 | `./secrets/credentials.json` |
+| `TOKEN_FILE`                                                                                | Path to stored OAuth2 `token.json` (`0600`)               | `./secrets/token.json`       |
+| `BACKUP_ENCRYPTION_KEY`                                                                     | Passphrase for `--encrypt` (AES-256-GCM)                  | —                            |
+| `DATABASE_URL`                                                                              | Connection URI (auto-detects Postgres/MySQL/Mongo/SQLite) | —                            |
+| `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, `PGDATABASE`, `PGSSLMODE`                       | PostgreSQL connection for `--db postgres`                 | `localhost:5432`             |
+| `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_DATABASE`                | MySQL / MariaDB connection for `--db mysql` / `--mysql`   | `localhost:3306`             |
+| `MONGODB_URI`, `MONGO_HOST`, `MONGO_PORT`, `MONGO_USER`, `MONGO_PASSWORD`, `MONGO_DATABASE` | MongoDB connection for `--db mongodb`                     | `localhost:27017`            |
+| `SQLITE_PATH`                                                                               | SQLite database file path for `--db sqlite`               | —                            |
 
 See [example.env](./example.env) for a ready-to-copy template.
 
@@ -135,7 +195,10 @@ See [example.env](./example.env) for a ready-to-copy template.
 | `--encrypt`                | —     | Encrypt on upload / decrypt on download using `$BACKUP_ENCRYPTION_KEY` |
 | `--stdin`                  | —     | Read upload payload from standard input (requires `--name`)            |
 | `--name <filename>`        | —     | Filename when uploading from `--stdin`                                 |
-| `--mysql`                  | `-m`  | Create and upload a MySQL dump using `$MYSQL_*` env vars               |
+| `--db <engine>`            | —     | Native DB backup: `postgres`, `mysql` (`mariadb`), `mongodb`, `sqlite` |
+| `--db-url <uri>`           | —     | Database connection URI (auto-detects engine from scheme)              |
+| `--db-format <fmt>`        | —     | PostgreSQL dump format: `plain` (`.sql`), `custom` (`.dump`), `tar`    |
+| `--mysql`                  | `-m`  | Alias for `--db mysql`                                                 |
 | `--drive-id <id>`          | —     | Target a Google Workspace Shared Drive                                 |
 | `--service-account <path>` | —     | Path to a Service Account JSON key                                     |
 | `--json`                   | —     | Output machine-readable JSON (ideal for CI/scripts)                    |
@@ -174,7 +237,7 @@ npm install @d0whc3r/node-gdrive
 ### ESM / TypeScript
 
 ```ts
-import { GDrive } from '@d0whc3r/node-gdrive';
+import { dumpDatabase, GDrive } from '@d0whc3r/node-gdrive';
 
 const gdrive = new GDrive({
   serviceAccountFile: './secrets/service-account.json',
@@ -196,6 +259,29 @@ await gdrive.downloadFile('daily.zip.enc', './restore/daily.zip', {
   folderName: 'backups/daily',
   decryptKey: process.env.BACKUP_ENCRYPTION_KEY
 });
+
+// Stream a PostgreSQL dump directly to Google Drive with client-side encryption
+const dump = await dumpDatabase({
+  url: process.env.DATABASE_URL,
+  format: 'custom'
+});
+try {
+  if (dump.kind === 'stream') {
+    await gdrive.uploadStream(dump.stream, dump.filename, 'backups/pg', {
+      create: true,
+      encryptKey: process.env.BACKUP_ENCRYPTION_KEY,
+      mimeType: dump.mimeType
+    });
+    await dump.wait();
+  } else {
+    await gdrive.uploadFile(dump.filePath, 'backups/pg', {
+      create: true,
+      encryptKey: process.env.BACKUP_ENCRYPTION_KEY
+    });
+  }
+} finally {
+  await dump.cleanup();
+}
 
 // Delete files older than 14 days while keeping at least the 5 newest
 await gdrive.cleanOlder('14d', 'backups/daily', { keepLast: 5 });

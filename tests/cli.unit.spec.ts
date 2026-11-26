@@ -97,6 +97,13 @@ describe('CLI argument parsing & commands', () => {
       expect(stdinOpts.name).toBe('dump.sql');
     });
 
+    it('parses --db, --db-url, and --db-format flags', () => {
+      const parsed = parseCliArgs(['--db', 'postgres', '--db-url', 'postgresql://localhost/app', '--db-format', 'custom']);
+      expect(parsed.db).toBe('postgres');
+      expect(parsed['db-url']).toBe('postgresql://localhost/app');
+      expect(parsed['db-format']).toBe('custom');
+    });
+
     it('rejects invalid --keep-last, --stdin without --name, and unknown options', () => {
       expect(() => parseCliArgs(['--keep-last', '-1'])).toThrow('Invalid --keep-last');
       expect(() => parseCliArgs(['--stdin'])).toThrow('--stdin requires --name');
@@ -217,6 +224,7 @@ describe('CLI argument parsing & commands', () => {
     });
 
     it('throws on missing MySQL env vars and cleans up temp dump file after MySQL backup', async () => {
+      vi.stubEnv('PATH', '');
       vi.stubEnv('MYSQL_USER', '');
       vi.stubEnv('MYSQL_PASSWORD', '');
       vi.stubEnv('MYSQL_DATABASE', '');

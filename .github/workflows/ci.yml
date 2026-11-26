@@ -118,8 +118,20 @@ jobs:
           tags: d0whc3r/gdrive:ci-test
           cache-from: type=gha
           cache-to: type=gha,mode=max
-      - name: Smoke test Docker image
+      - name: Smoke test Docker slim image
         run: docker run --rm d0whc3r/gdrive:ci-test --help
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          target: db
+          load: true
+          tags: d0whc3r/gdrive:ci-test-db
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Smoke test Docker db image
+        run: |
+          docker run --rm d0whc3r/gdrive:ci-test-db --help
+          docker run --rm --entrypoint sh d0whc3r/gdrive:ci-test-db -c "pg_dump --version && mariadb-dump --version && mongodump --version"
 
   docker-publish:
     needs: [verify, release]
@@ -147,6 +159,7 @@ jobs:
       - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
+          target: slim
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
@@ -155,5 +168,19 @@ jobs:
             d0whc3r/gdrive:${{ steps.version.outputs.version }}
             d0whc3r/gdrive:${{ steps.version.outputs.minor }}
             d0whc3r/gdrive:${{ steps.version.outputs.major }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          target: db
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            d0whc3r/gdrive:db
+            d0whc3r/gdrive:v${{ steps.version.outputs.version }}-db
+            d0whc3r/gdrive:${{ steps.version.outputs.version }}-db
+            d0whc3r/gdrive:${{ steps.version.outputs.minor }}-db
+            d0whc3r/gdrive:${{ steps.version.outputs.major }}-db
           cache-from: type=gha
           cache-to: type=gha,mode=max

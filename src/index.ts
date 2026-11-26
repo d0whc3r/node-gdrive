@@ -874,4 +874,6 @@ export class GDrive {
 }
 
 export { Auth, Config, decryptBuffer, decryptFile, encryptBuffer, encryptFile, isRetryableError, withRetry };
+export { detectDbEngineFromUrl, dumpDatabase, normalizeDbEngine, SUPPORTED_DB_ENGINES } from './db';
+export type { DbDumpFileResult, DbDumpOptions, DbDumpResult, DbDumpStreamResult, DbEngine, DbProvider, PostgresFormat } from './db';
 export * from './types';

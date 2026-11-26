@@ -80,11 +80,32 @@ export const optionDefinitions: OptionDefinition[] = [
     description: 'Always keep the newest N files when cleaning older files'
   },
   {
+    name: 'db',
+    typeLabel: '{underline engine}',
+    multiple: false,
+    type: String,
+    description: 'Database backup engine: postgres, mysql (or mariadb), mongodb, sqlite'
+  },
+  {
+    name: 'db-url',
+    typeLabel: '{underline uri}',
+    multiple: false,
+    type: String,
+    description: 'Database connection URI (auto-detects engine from scheme; overrides $DATABASE_URL)'
+  },
+  {
+    name: 'db-format',
+    typeLabel: '{underline format}',
+    multiple: false,
+    type: String,
+    description: 'PostgreSQL dump format: plain (.sql), custom (.dump), or tar (.tar)'
+  },
+  {
     name: 'mysql',
     alias: 'm',
     multiple: false,
     type: Boolean,
-    description: 'MySQL backup using environment variables ($MYSQL_USER, $MYSQL_PASSWORD, $MYSQL_DATABASE, $MYSQL_HOST, $MYSQL_PORT)'
+    description: 'Alias for --db mysql (uses $MYSQL_* or $DATABASE_URL)'
   },
   {
     name: 'stdin',
@@ -173,6 +194,9 @@ export interface GDriveOptions extends CommandLineOptions {
   replace?: boolean;
   delete?: string | string[];
   'keep-last'?: number;
+  db?: string;
+  'db-url'?: string;
+  'db-format'?: 'plain' | 'custom' | 'tar';
   mysql?: boolean;
   stdin?: boolean;
   name?: string;
@@ -228,8 +252,8 @@ export function getUsageGuide(): string {
           example: `$ ${ex} -f backups -d 7d --keep-last 5 --dry-run`
         },
         {
-          desc: '7. Generate MySQL dump, zip, and upload to "mysql-backup" folder.',
-          example: `$ ${ex} -f mysql-backup -m -z -c`
+          desc: '7. Backup PostgreSQL, MySQL, MongoDB, or SQLite natively (streamed directly to Google Drive).',
+          example: `$ ${ex} --db postgres -f backups/pg -c --encrypt\n$ ${ex} --db-url "mongodb+srv://user:pass@host/mydb" -f backups/mongo -c\n$ ${ex} --db sqlite -f backups/sqlite -z -c`
         }
       ]
     }
