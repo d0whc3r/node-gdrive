@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.5.1](https://github.com/d0whc3r/node-gdrive/compare/v3.5.0...v3.5.1) (2026-11-26)
+
+
+### Bug Fixes
+
+* resolve SonarQube issues and add Docker Hub publishing ([0dd252a](https://github.com/d0whc3r/node-gdrive/commit/0dd252a828204239954eeb79c095e1ded4ab257d))
+
 # [3.5.0](https://github.com/d0whc3r/node-gdrive/compare/v3.4.1...v3.5.0) (2026-11-25)
 
 
