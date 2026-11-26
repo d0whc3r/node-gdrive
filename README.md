@@ -1,6 +1,6 @@
 # node-gdrive
 
-CLI and Node.js library to back up, restore, encrypt, and prune files on **Google Drive**—works via **Docker**, **npx/npm**, or as a **standalone binary** (Linux, macOS, Windows).
+CLI and Node.js library to back up, restore, encrypt, and prune **files and databases (PostgreSQL, MySQL/MariaDB, MongoDB, SQLite)** on **Google Drive**—works via **Docker**, **npx/npm**, or as a **standalone binary** (Linux, macOS, Windows).
 
 [![CI](https://img.shields.io/github/actions/workflow/status/d0whc3r/node-gdrive/ci.yml?branch=master&style=flat-square&logo=githubactions&logoColor=white&label=CI)](https://github.com/d0whc3r/node-gdrive/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/@d0whc3r/node-gdrive?style=flat-square&logo=npm&logoColor=white)](https://www.npmjs.com/package/@d0whc3r/node-gdrive)
@@ -57,18 +57,19 @@ Optional installer overrides:
 
 ```bash
 # Pin a specific version or custom install directory
-VERSION=v3.5.1 INSTALL_DIR="$HOME/.local/bin" \
+VERSION=v3.6.0 INSTALL_DIR="$HOME/.local/bin" \
   curl -fsSL https://raw.githubusercontent.com/d0whc3r/node-gdrive/master/install.sh | sh
 ```
 
-Update an installed standalone binary in place at any time:
+Update an installed standalone binary in place at any time (no Google Drive credentials required):
 
 ```bash
 node-gdrive --update            # Check GitHub Releases and replace binary atomically
 node-gdrive --update --dry-run  # Check if a newer release is available without modifying the binary
+node-gdrive --update --json     # Output machine-readable update status
 ```
 
-_(On Windows `x64`, download `node-gdrive-win-x64.exe` from [GitHub Releases](https://github.com/d0whc3r/node-gdrive/releases); `--update` works on Windows too.)_
+_(If installed via `npm`/`npx`, `--update` detects the Node.js runtime safely and prints the `npm install -g @d0whc3r/node-gdrive@latest` command instead of touching the binary. On Windows `x64`, download `node-gdrive-win-x64.exe` from [GitHub Releases](https://github.com/d0whc3r/node-gdrive/releases); `--update` works on Windows too.)_
 
 ---
 
@@ -175,18 +176,18 @@ node-gdrive --db postgres -f backups/pg -c --encrypt && \
 
 ## Environment Variables
 
-| Variable                                                                                    | Description                                               | Default                      |
-| ------------------------------------------------------------------------------------------- | --------------------------------------------------------- | ---------------------------- |
-| `GOOGLE_APPLICATION_CREDENTIALS`                                                            | Path to Service Account JSON key (standard GCP var)       | —                            |
-| `SERVICE_ACCOUNT_FILE`                                                                      | Alias for Service Account JSON key path                   | —                            |
-| `CREDENTIALS_FILE`                                                                          | Path to OAuth2 Desktop `credentials.json`                 | `./secrets/credentials.json` |
-| `TOKEN_FILE`                                                                                | Path to stored OAuth2 `token.json` (`0600`)               | `./secrets/token.json`       |
-| `BACKUP_ENCRYPTION_KEY`                                                                     | Passphrase for `--encrypt` (AES-256-GCM)                  | —                            |
-| `DATABASE_URL`                                                                              | Connection URI (auto-detects Postgres/MySQL/Mongo/SQLite) | —                            |
-| `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, `PGDATABASE`, `PGSSLMODE`                       | PostgreSQL connection for `--db postgres`                 | `localhost:5432`             |
-| `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_DATABASE`                | MySQL / MariaDB connection for `--db mysql` / `--mysql`   | `localhost:3306`             |
-| `MONGODB_URI`, `MONGO_HOST`, `MONGO_PORT`, `MONGO_USER`, `MONGO_PASSWORD`, `MONGO_DATABASE` | MongoDB connection for `--db mongodb`                     | `localhost:27017`            |
-| `SQLITE_PATH`                                                                               | SQLite database file path for `--db sqlite`               | —                            |
+| Variable                                                                                                     | Description                                               | Default                      |
+| ------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------- | ---------------------------- |
+| `GOOGLE_APPLICATION_CREDENTIALS`                                                                             | Path to Service Account JSON key (standard GCP var)       | —                            |
+| `SERVICE_ACCOUNT_FILE`                                                                                       | Alias for Service Account JSON key path                   | —                            |
+| `CREDENTIALS_FILE`                                                                                           | Path to OAuth2 Desktop `credentials.json`                 | `./secrets/credentials.json` |
+| `TOKEN_FILE`                                                                                                 | Path to stored OAuth2 `token.json` (`0600`)               | `./secrets/token.json`       |
+| `BACKUP_ENCRYPTION_KEY`                                                                                      | Passphrase for `--encrypt` (AES-256-GCM)                  | —                            |
+| `DATABASE_URL`                                                                                               | Connection URI (auto-detects Postgres/MySQL/Mongo/SQLite) | —                            |
+| `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, `PGDATABASE`, `PGSSLMODE`                                        | PostgreSQL connection for `--db postgres`                 | `localhost:5432`             |
+| `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_DATABASE`                                 | MySQL / MariaDB connection for `--db mysql` / `--mysql`   | `localhost:3306`             |
+| `MONGODB_URI`, `MONGO_HOST`, `MONGO_PORT`, `MONGO_USER`, `MONGO_PASSWORD`, `MONGO_DATABASE`, `MONGO_AUTH_DB` | MongoDB connection for `--db mongodb`                     | `localhost:27017`            |
+| `SQLITE_PATH`                                                                                                | SQLite database file path for `--db sqlite`               | —                            |
 
 See [example.env](./example.env) for a ready-to-copy template.
 
@@ -210,7 +211,7 @@ See [example.env](./example.env) for a ready-to-copy template.
 | `--dry-run`                | —     | Preview uploads/deletions without modifying Drive                        |
 | `--encrypt`                | —     | Encrypt on upload / decrypt on download using `$BACKUP_ENCRYPTION_KEY`   |
 | `--stdin`                  | —     | Read upload payload from standard input (requires `--name`)              |
-| `--name <filename>`        | —     | Filename when uploading from `--stdin`                                   |
+| `--name <filename>`        | —     | Destination filename when using `--stdin` or custom dump name for `--db` |
 | `--db <engine>`            | —     | Native DB backup: `postgres`, `mysql` (`mariadb`), `mongodb`, `sqlite`   |
 | `--db-url <uri>`           | —     | Database connection URI (auto-detects engine from scheme)                |
 | `--db-format <fmt>`        | —     | PostgreSQL dump format: `plain` (`.sql`), `custom` (`.dump`), `tar`      |
@@ -239,7 +240,7 @@ See [example.env](./example.env) for a ready-to-copy template.
 
 ### Exit Codes
 
-- `0`: Success (or `--help` / `--version`).
+- `0`: Success (or `--help` / `--version` / `--update`).
 - `1`: Runtime or Google Drive API error.
 - `2`: Invalid CLI arguments or missing required options.
 

@@ -75,6 +75,11 @@ install.sh                   # POSIX curl/wget installer for GitHub Release SEA 
 4. Add unit tests in `tests/db.unit.spec.ts` (use fake executable scripts in a temp `PATH` dir to test real process streaming, env isolation, stderr sanitization, and cleanup).
 5. If the engine requires a CLI client binary, add it to the `db` target in `Dockerfile` and smoke-test it in `.github/workflows/ci.yml`.
 
+### Installer & Self-Updater (`install.sh` & `cli/updater.ts`)
+
+- **`install.sh`**: POSIX `sh` script (no bashisms; validate with `sh -n install.sh`). Downloads prebuilt SEA assets from GitHub Releases (`/releases/latest/download/<asset>` to avoid unauthenticated API rate limits), supports `VERSION` and `INSTALL_DIR`, and installs atomically.
+- **`cli/updater.ts`**: Powers `--update` / `-u`. Uses `node:sea` (`sea.isSea()`) to guarantee it never overwrites the `node` binary when executed via `npm`/`npx`. For standalone SEA binaries, downloads to a temp file in the target binary's directory and replaces it atomically (`rename` on POSIX, `.old` swap on Windows). Tested offline via `tests/updater.unit.spec.ts`.
+
 ## Building Docker Images Locally
 
 The `Dockerfile` defines two targets:
