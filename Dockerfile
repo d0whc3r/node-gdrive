@@ -1,11 +1,11 @@
 FROM node:26-trixie-slim AS builder
 
-RUN npm install -g pnpm@12.16.1
+RUN npm install --ignore-scripts -g pnpm@12.16.1
 
 WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json tsconfig.build.json vite.config.mts vite.cli.config.mts vite.sea.config.mts ./
 COPY scripts/ /app/scripts
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --ignore-scripts
 
 COPY src/ /app/src
 COPY cli/ /app/cli
