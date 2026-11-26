@@ -1,5 +1,12 @@
 # Changelog
 
+# [3.6.0](https://github.com/d0whc3r/node-gdrive/compare/v3.5.1...v3.6.0) (2026-11-26)
+
+
+### Features
+
+* add native database backup providers for PostgreSQL, MySQL/MariaDB, MongoDB, and SQLite ([b624896](https://github.com/d0whc3r/node-gdrive/commit/b62489674517b841639275acbc77ab02013df612))
+
 ## [3.5.1](https://github.com/d0whc3r/node-gdrive/compare/v3.5.0...v3.5.1) (2026-11-26)
 
 
