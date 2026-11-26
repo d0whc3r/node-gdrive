@@ -35,7 +35,7 @@ dayjs.extend(isSameOrBefore);
 
 const VALID_FIELDS = new Set<string>(allFileTypes);
 
-const TIME_SPACE_REGEX = /^(\d+)(s|m|h|d|w|M|y|seconds?|minutes?|hours?|days?|weeks?|months?|years?)$/;
+const TIME_SPACE_REGEX = /^(\d+)([a-zA-Z]+)$/;
 
 const TIME_UNIT_MAP: Record<string, ManipulateType> = {
   s: 'second',
@@ -67,14 +67,14 @@ export function escapeDriveQuery(value: string): string {
 
 export function parseTimeSpace(timeSpace: string): { amount: number; unit: ManipulateType } {
   const match = TIME_SPACE_REGEX.exec(timeSpace);
-  if (!match) {
+  const unit = match ? TIME_UNIT_MAP[match[2]] : undefined;
+  if (!match || !unit) {
     throw new Error(
       `${Config.TAG} Invalid timeSpace "${timeSpace}". Expected "<number><unit>" where unit is one of: s, m, h, d, w, M, y, second(s), minute(s), hour(s), day(s), week(s), month(s), year(s).`
     );
   }
   const amount = Number(match[1]);
-  const unit = TIME_UNIT_MAP[match[2]];
-  if (!Number.isFinite(amount) || amount <= 0 || !unit) {
+  if (!Number.isFinite(amount) || amount <= 0) {
     throw new Error(`${Config.TAG} Invalid timeSpace "${timeSpace}": amount must be a positive integer.`);
   }
   return { amount, unit };
@@ -86,11 +86,13 @@ async function runWithConcurrency<T, R>(items: T[], concurrency: number, worker:
   let nextIndex = 0;
 
   async function next(): Promise<void> {
-    while (nextIndex < items.length) {
-      const currentIndex = nextIndex;
-      nextIndex += 1;
-      results[currentIndex] = await worker(items[currentIndex]);
+    if (nextIndex >= items.length) {
+      return;
     }
+    const currentIndex = nextIndex;
+    nextIndex += 1;
+    results[currentIndex] = await worker(items[currentIndex]);
+    await next();
   }
 
   const workers = Array.from({ length: Math.min(limit, items.length) }, () => next());
@@ -246,52 +248,52 @@ export class GDrive {
     }
   }
 
+  private async resolveDownloadFileId(fileIdOrName: string, folderName?: string): Promise<string> {
+    if (folderName) {
+      const folderId = await this.findFolderId(folderName, false);
+      const found = await this.findFile(fileIdOrName, folderId);
+      if (!found?.id) {
+        throw new Error(`${Config.TAG} File "${fileIdOrName}" not found in folder "${folderName}"`);
+      }
+      return found.id;
+    }
+
+    try {
+      const meta = await withRetry(
+        () =>
+          this.drive.files.get({
+            fileId: fileIdOrName,
+            fields: 'id, name, mimeType',
+            ...this.sharedDriveItemParams
+          }),
+        this.retryOptions
+      );
+      return meta.data.id ?? fileIdOrName;
+    } catch {
+      const found = await this.findFile(fileIdOrName);
+      if (!found?.id) {
+        throw new Error(`${Config.TAG} File "${fileIdOrName}" not found`);
+      }
+      return found.id;
+    }
+  }
+
   async downloadFile(fileIdOrName: string, destPath: string, options: DownloadOptions = {}): Promise<string> {
     await this.ensureInitiated();
     if (!fileIdOrName) {
       throw new Error(`${Config.TAG} File id or name is required for download`);
     }
 
-    let resolvedFileId = fileIdOrName;
-    if (options.folderName) {
-      const folderId = await this.findFolderId(options.folderName, false);
-      const found = await this.findFile(fileIdOrName, folderId);
-      if (!found?.id) {
-        throw new Error(`${Config.TAG} File "${fileIdOrName}" not found in folder "${options.folderName}"`);
-      }
-      resolvedFileId = found.id;
-    } else {
-      try {
-        const meta = await withRetry(
-          () =>
-            this.drive.files.get({
-              fileId: fileIdOrName,
-              fields: 'id, name, mimeType',
-              ...this.sharedDriveItemParams
-            }),
-          this.retryOptions
-        );
-        if (meta.data.id) {
-          resolvedFileId = meta.data.id;
-        }
-      } catch {
-        const found = await this.findFile(fileIdOrName);
-        if (!found?.id) {
-          throw new Error(`${Config.TAG} File "${fileIdOrName}" not found`);
-        }
-        resolvedFileId = found.id;
-      }
-    }
+    const resolvedFileId = await this.resolveDownloadFileId(fileIdOrName, options.folderName);
 
     fs.mkdirSync(path.dirname(path.resolve(destPath)), { recursive: true });
 
     let tempDir: string | undefined;
-    const downloadTarget = options.decryptKey
-      ? (() => {
-          tempDir = this.createPrivateTempDir();
-          return path.join(tempDir, 'download.enc');
-        })()
-      : destPath;
+    let downloadTarget = destPath;
+    if (options.decryptKey) {
+      tempDir = this.createPrivateTempDir();
+      downloadTarget = path.join(tempDir, 'download.enc');
+    }
 
     try {
       const response = await withRetry(
@@ -557,18 +559,20 @@ export class GDrive {
 
   private async getListFiles(info: Params$Resource$Files$List): Promise<Schema$File$Modded[]> {
     const allFiles: drive_v3.Schema$File[] = [];
-    let pageToken: string | undefined;
+
+    const fetchPage = async (pageToken?: string): Promise<void> => {
+      const params: Params$Resource$Files$List = pageToken ? { ...info, pageToken } : { ...info };
+      const { data } = await withRetry(() => this.drive.files.list(params), this.retryOptions);
+      if (data.files?.length) {
+        allFiles.push(...data.files);
+      }
+      if (data.nextPageToken) {
+        await fetchPage(data.nextPageToken);
+      }
+    };
 
     try {
-      do {
-        const params: Params$Resource$Files$List = pageToken ? { ...info, pageToken } : { ...info };
-        const { data } = await withRetry(() => this.drive.files.list(params), this.retryOptions);
-        if (data.files?.length) {
-          allFiles.push(...data.files);
-        }
-        pageToken = data.nextPageToken ?? undefined;
-      } while (pageToken);
-
+      await fetchPage();
       return this.parseFilesMeta(allFiles);
     } catch (err) {
       throw this.genericError(err);
@@ -683,31 +687,39 @@ export class GDrive {
       throw new Error(`${Config.TAG} Invalid folder path "${folderPath}"`);
     }
 
-    let parentId = this.rootParentId;
-    for (const segment of segments) {
-      const q = [
-        `name = '${escapeDriveQuery(segment)}'`,
-        `mimeType = '${this.MIME_FOLDER}'`,
-        'trashed = false',
-        `'${escapeDriveQuery(parentId)}' in parents`
-      ].join(' and ');
+    return this.resolveFolderSegments(segments, 0, this.rootParentId, create, folderPath);
+  }
 
-      const matches = await this.listFiles(undefined, 100, q);
-      const existing = matches.find((file) => file.isFolder && !file.isDeleted && file.name === segment && file.id);
-      if (existing?.id) {
-        parentId = existing.id;
-      } else if (create) {
-        const created = await this.createFolder(segment, parentId);
-        if (!created.id) {
-          throw new Error(`${Config.TAG} Failed to create folder "${segment}"`);
-        }
-        parentId = created.id;
-      } else {
-        throw new Error(`${Config.TAG} Folder "${folderPath}" does not exist and will not be created`);
-      }
+  private async resolveFolderSegments(segments: string[], index: number, parentId: string, create: boolean, folderPath: string): Promise<string> {
+    if (index >= segments.length) {
+      return parentId;
     }
 
-    return parentId;
+    const segment = segments[index];
+    const q = [
+      `name = '${escapeDriveQuery(segment)}'`,
+      `mimeType = '${this.MIME_FOLDER}'`,
+      'trashed = false',
+      `'${escapeDriveQuery(parentId)}' in parents`
+    ].join(' and ');
+
+    const matches = await this.listFiles(undefined, 100, q);
+    const existing = matches.find((file) => file.isFolder && !file.isDeleted && file.name === segment && file.id);
+
+    let nextParentId: string;
+    if (existing?.id) {
+      nextParentId = existing.id;
+    } else if (create) {
+      const created = await this.createFolder(segment, parentId);
+      if (!created.id) {
+        throw new Error(`${Config.TAG} Failed to create folder "${segment}"`);
+      }
+      nextParentId = created.id;
+    } else {
+      throw new Error(`${Config.TAG} Folder "${folderPath}" does not exist and will not be created`);
+    }
+
+    return this.resolveFolderSegments(segments, index + 1, nextParentId, create, folderPath);
   }
 
   private async findFile(fileName: string, folderId?: string): Promise<Schema$File$Modded | null> {

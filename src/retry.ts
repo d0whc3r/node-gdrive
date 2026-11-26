@@ -9,19 +9,26 @@ function defaultSleep(ms: number): Promise<void> {
   });
 }
 
+function getErrorStatus(record: Record<string, unknown>): number | undefined {
+  if (typeof record.status === 'number') {
+    return record.status;
+  }
+  if (typeof record.code === 'number') {
+    return record.code;
+  }
+  const response = record.response as Record<string, unknown> | undefined;
+  if (typeof response?.status === 'number') {
+    return response.status;
+  }
+  return undefined;
+}
+
 export function isRetryableError(err: unknown): boolean {
   if (!err || typeof err !== 'object') {
     return false;
   }
   const record = err as Record<string, unknown>;
-  const status =
-    typeof record.status === 'number'
-      ? record.status
-      : typeof record.code === 'number'
-        ? record.code
-        : typeof (record.response as Record<string, unknown> | undefined)?.status === 'number'
-          ? ((record.response as Record<string, unknown>).status as number)
-          : undefined;
+  const status = getErrorStatus(record);
   if (status !== undefined && RETRYABLE_STATUS_CODES.has(status)) {
     return true;
   }
@@ -35,8 +42,7 @@ export function isRetryableError(err: unknown): boolean {
 export async function withRetry<T>(fn: () => Promise<T>, options: RetryOptions = {}): Promise<T> {
   const { maxRetries = 4, baseDelayMs = 500, maxDelayMs = 16_000, jitter = true, sleep = defaultSleep } = options;
 
-  let attempt = 0;
-  while (true) {
+  const attemptRetry = async (attempt: number): Promise<T> => {
     try {
       return await fn();
     } catch (err) {
@@ -45,8 +51,10 @@ export async function withRetry<T>(fn: () => Promise<T>, options: RetryOptions =
       }
       const expDelay = Math.min(maxDelayMs, baseDelayMs * 2 ** attempt);
       const delay = jitter ? Math.round(expDelay * (0.5 + Math.random() * 0.5)) : expDelay;
-      attempt += 1;
       await sleep(delay);
+      return attemptRetry(attempt + 1);
     }
-  }
+  };
+
+  return attemptRetry(0);
 }

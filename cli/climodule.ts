@@ -116,14 +116,15 @@ export class Cli {
       };
     });
 
-    const deleted: Schema$File$Modded[] = [];
-    for (const info of parsed) {
-      const removed = await this.gdrive.cleanOlder(info.timeSpace, info.folder, {
-        dryRun: options.dryRun,
-        keepLast: options.keepLast
-      });
-      deleted.push(...removed);
-    }
+    const removedBatches = await Promise.all(
+      parsed.map((info) =>
+        this.gdrive.cleanOlder(info.timeSpace, info.folder, {
+          dryRun: options.dryRun,
+          keepLast: options.keepLast
+        })
+      )
+    );
+    const deleted = removedBatches.flat();
 
     if (this.opts.json) {
       console.info(JSON.stringify(deleted, null, 2));

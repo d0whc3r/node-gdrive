@@ -1,8 +1,6 @@
-FROM node:26-slim AS builder
+FROM node:26-trixie-slim AS builder
 
-ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable
+RUN npm install -g pnpm@12.16.1
 
 WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json tsconfig.build.json vite.config.mts vite.cli.config.mts vite.sea.config.mts ./
@@ -13,12 +11,15 @@ COPY src/ /app/src
 COPY cli/ /app/cli
 RUN pnpm build
 
-FROM debian:bookworm-slim
+FROM debian:trixie-slim
 
 ENV TOKEN_FILE=/app/secrets/token.json
 ENV CREDENTIALS_FILE=/app/secrets/credentials.json
 
-RUN useradd --uid 10001 --create-home --shell /usr/sbin/nologin appuser && \
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates && \
+    rm -rf /var/lib/apt/lists/* && \
+    useradd --uid 10001 --create-home --shell /usr/sbin/nologin appuser && \
     mkdir -p /app/secrets && \
     chown -R appuser:appuser /app
 

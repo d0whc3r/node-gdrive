@@ -22,7 +22,7 @@ fs.writeFileSync(tmpConfig, JSON.stringify(seaConfig, null, 2), { mode: 0o600 })
 try {
   execFileSync(process.execPath, ['--build-sea', tmpConfig], { stdio: 'inherit' });
   if (isMac) {
-    execFileSync('codesign', ['--sign', '-', output], { stdio: 'inherit' });
+    execFileSync('/usr/bin/codesign', ['--sign', '-', output], { stdio: 'inherit' });
   }
 } finally {
   fs.rmSync(tmpDir, { recursive: true, force: true });
