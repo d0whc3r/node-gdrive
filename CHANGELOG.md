@@ -1,5 +1,12 @@
 # Changelog
 
+# [3.7.0](https://github.com/d0whc3r/node-gdrive/compare/v3.6.0...v3.7.0) (2026-11-26)
+
+
+### Features
+
+* add curl installer and --update self-updater ([675f3c5](https://github.com/d0whc3r/node-gdrive/commit/675f3c58ba1735974d7b3eaecabbe98e97e2fa1b))
+
 # [3.6.0](https://github.com/d0whc3r/node-gdrive/compare/v3.5.1...v3.6.0) (2026-11-26)
 
 
